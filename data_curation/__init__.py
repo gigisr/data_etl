@@ -1,3 +1,3 @@
-from data_curation.curation import Data
+from data_curation.data_files import DataCuration
 
 __all__ = []
