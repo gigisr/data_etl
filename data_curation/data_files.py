@@ -18,7 +18,7 @@ class DataCuration:
     __key_3 = None
     tables = dict()
     list_files = []
-    __key_seperator = ' -:- '  # TODO function to assign this value
+    __key_separator = ' -:- '  # TODO function to assign this value
 
     def __init__(self, key_1, key_2=None, key_3=None):
         """
@@ -391,7 +391,7 @@ class DataCuration:
                         raise ValueError(var_msg)
                     if type(func_use).__name__ != 'function':
                         var_msg = ('The function for converting is not a '
-                                   'fuction! For keys {}, {}').format(
+                                   'function! For keys {}, {}').format(
                             convert_key, i)
                         module_logger.error(var_msg)
                         raise ValueError(var_msg)
@@ -411,8 +411,8 @@ class DataCuration:
                         col, convert_key, i)
                     module_logger.error(var_msg)
                     self.error_handling(
-                        dict_key.split(self.__key_seperator)[0],
-                        dict_key.split(self.__key_seperator)[1],
+                        dict_key.split(self.__key_separator)[0],
+                        dict_key.split(self.__key_separator)[1],
                         'The conversion failed to format {}'.format(
                             convert_key),
                         '',
