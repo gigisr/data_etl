@@ -264,12 +264,19 @@ class DataCuration:
         # a list of dictionary keys that have had their headers done already?
         return self.__step_no
 
-    def set_headers(self, list_cols):
-        if type(list_cols).__name__ != 'list':
-            var_msg = ('The argument `list_cols` of function `set_headers` '
-                       'needs to be a list')
-            module_logger.error(var_msg)
-            raise ValueError(var_msg)
+    def set_headers(self, list_cols=None, function=None):
+        if list_cols is not None:
+            if type(list_cols).__name__ != 'list':
+                var_msg = ('The argument `list_cols` of function `set_headers` '
+                           'needs to be a list')
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+        elif function is not None:
+            if type(function).__name__ != 'function':
+                var_msg = ('The argument `function` of function `set_headers` '
+                           'needs to be a function')
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
         var_type = type(self.tables).__name__
         if var_type == 'dict':
             dict_dfs = self.tables.copy()
@@ -278,18 +285,25 @@ class DataCuration:
             var_cond = var_cond != 1
             if var_cond:
                 var_msg = ('There are an inconsistent number of columns '
-                           'present in the dictonary of tables')
+                           'present in the dictionary of tables')
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
-            elif (len(list_cols) !=
-                  dict_dfs[[x for x in dict_dfs.keys()][0]].shape[1]):
-                var_msg = ('The length of `list_cols` is different to the '
-                           'number of columns present in the table')
-                module_logger.error(var_msg)
-                raise ValueError(var_msg)
+            if list_cols is not None:
+                if (len(list_cols) !=
+                        dict_dfs[[x for x in dict_dfs.keys()][0]].shape[1]):
+                    var_msg = ('The length of `list_cols` is different to the '
+                               'number of columns present in the table')
+                    module_logger.error(var_msg)
+                    raise ValueError(var_msg)
             dict_dfs = self.tables.copy()
+            list_cols_org = dict_dfs[
+                [x for x in dict_dfs.keys()][0]
+            ].columns.tolist()
             for key in dict_dfs.keys():
-                dict_dfs[key].columns = list_cols
+                if list_cols is not None:
+                    dict_dfs[key].columns = list_cols
+                elif function is not None:
+                    dict_dfs[key].columns = [function(x) for x in list_cols_org]
             self.set_table(dict_dfs, overwrite=True)
         elif var_type == 'DataFrame':
             if len(list_cols) != self.tables.shape[1]:
@@ -298,7 +312,10 @@ class DataCuration:
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
             df = self.tables.copy()
-            df.columns = list_cols
+            if list_cols is not None:
+                df.columns = list_cols
+            elif function is not None:
+                df.columns = [function(x) for x in df.columns.tolist()]
             self.set_table(df, overwrite=True)
         else:
             var_msg = ('Somehow the tables are not a dictionary or a DataFrame '
