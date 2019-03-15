@@ -11,13 +11,14 @@ module_logger = logging.getLogger(__name__)
 
 
 class DataCuration:
-    __step_no = None
+    __step_no = 0
     df_issues = None
     __key_1 = None
     __key_2 = None
     __key_3 = None
     tables = dict()
     list_files = []
+    __key_seperator = ' -:- '  # TODO function to assign this value
 
     def __init__(self, key_1, key_2=None, key_3=None):
         """
@@ -33,14 +34,18 @@ class DataCuration:
         self.__key_2 = key_2
         self.__key_3 = key_3
         # sub_file, e.g. sheet for a spreadsheet, may not always be applicable
-        df_issues = pd.DataFrame(columns=[
-            'key_1', 'key_2', 'key_3', 'file', 'sub_file', 'step_number',
-            'issue_short_desc', 'issue_long_desc', 'issue_count', 'issue_idx'
-        ])
+        df_issues = pd.DataFrame(
+            columns=[
+                'key_1', 'key_2', 'key_3', 'file', 'sub_file', 'step_number',
+                'issue_short_desc', 'issue_long_desc', 'column', 'issue_count',
+                'issue_idx'
+            ]
+        )
+        df_issues['step_number'] = df_issues['step_number'].astype(int)
         self.df_issues = df_issues
 
     def error_handling(self, file, subfile, issue_short_desc, issue_long_desc,
-                       issue_count, issue_idx):
+                       column, issue_count, issue_idx):
         """
         If an error is handled, as they all should be, we need to specify what
         happens with the error. By putting it into a single function it will
@@ -49,14 +54,14 @@ class DataCuration:
         df = self.df_issues
         list_vals = [
             self.__key_1, self.__key_2, self.__key_3, file, subfile,
-            self.__step_no, issue_short_desc, issue_long_desc, issue_count,
-            issue_idx
+            self.__step_no, issue_short_desc, issue_long_desc, column,
+            issue_count, issue_idx
         ]
         try:
-            df.iloc[df.shape[0]] = list_vals
+            df.loc[df.shape[0]] = list_vals
             self.df_issues = df.copy()
         except:
-            logging.error(
+            module_logger.error(
                 'Logging the issue failed, values: {}'.format(list_vals))
 
     def set_step_no(self, step_no):
@@ -84,13 +89,13 @@ class DataCuration:
         if (var_type != 'list') & (var_type != 'str'):
             var_msg = ('The type of the `list_files` argument is not a list or '
                        'a string.')
-            logging.error(var_msg)
+            module_logger.error(var_msg)
             raise ValueError(var_msg)
         if var_type == 'str':
             if len(list_files) == 0:
                 var_msg = ('The length of the `list_files` argument is 0, it '
                            'needs to be a valid value.')
-                logging.error(var_msg)
+                module_logger.error(var_msg)
                 raise ValueError(var_msg)
             list_files = [list_files]
         self.list_files = list_files
@@ -123,12 +128,12 @@ class DataCuration:
         elif function is not None:
             if type(function).__name__ != 'function':
                 var_msg = 'The `function` argument needs to be a function'
-                logging.error(var_msg)
+                module_logger.error(var_msg)
                 raise ValueError(var_msg)
         else:
             var_msg = ('One of `script_name` or `function` needs to be not '
                        'None in the function `fnd_files`')
-            logging.error(var_msg)
+            module_logger.error(var_msg)
             raise ValueError(var_msg)
         list_files = function(path, **kwargs)
         if append:
@@ -154,7 +159,7 @@ class DataCuration:
             if type(function).__name__ != 'function':
                 var_msg = ('The function passed to `self.reading_in` is not a '
                            'function.')
-                logging.error(var_msg)
+                module_logger.error(var_msg)
                 raise ValueError(var_msg)
         elif (script_name is not None) & (path is not None):
             if not os.path.exists(
@@ -166,7 +171,7 @@ class DataCuration:
             var_msg = ('One of the `function` or `script_name` arguments needs '
                        'to be completed. And if `script name is then `path` '
                        'needs to be too.')
-            logging.error(var_msg)
+            module_logger.error(var_msg)
             raise ValueError(var_msg)
 
         try:
@@ -203,7 +208,7 @@ class DataCuration:
             self.tables = df
         else:
             var_msg = 'The combinations provided are not compatible'
-            logging.error(var_msg)
+            module_logger.error(var_msg)
             raise ValueError(var_msg)
 
     def concatenate_tables(self):
@@ -213,7 +218,7 @@ class DataCuration:
         if type(self.tables).__name__ != 'dict':
             var_msg = ('For the function `concatenate_tables` the `tables` '
                        'should be in dictionary format')
-            logging.error(var_msg)
+            module_logger.error(var_msg)
             raise ValueError(var_msg)
         df = pd.concat(self.tables, axis=1)
         self.tables = df
@@ -226,7 +231,7 @@ class DataCuration:
         if type(self.tables).__name__ != 'DataFrame':
             var_msg = ('For the function `dictionary_tables` the `tables` '
                        'should be in DataFrame format.')
-            logging.error(var_msg)
+            module_logger.error(var_msg)
             raise ValueError(var_msg)
         df = self.tables
         dict_dfs = dict()
@@ -263,7 +268,7 @@ class DataCuration:
         if type(list_cols).__name__ != 'list':
             var_msg = ('The argument `list_cols` of function `set_headers` '
                        'needs to be a list')
-            logging.error(var_msg)
+            module_logger.error(var_msg)
             raise ValueError(var_msg)
         var_type = type(self.tables).__name__
         if var_type == 'dict':
@@ -274,13 +279,13 @@ class DataCuration:
             if var_cond:
                 var_msg = ('There are an inconsistent number of columns '
                            'present in the dictonary of tables')
-                logging.error(var_msg)
+                module_logger.error(var_msg)
                 raise ValueError(var_msg)
             elif (len(list_cols) !=
                   dict_dfs[[x for x in dict_dfs.keys()][0]].shape[1]):
                 var_msg = ('The length of `list_cols` is different to the '
                            'number of columns present in the table')
-                logging.error(var_msg)
+                module_logger.error(var_msg)
                 raise ValueError(var_msg)
             dict_dfs = self.tables.copy()
             for key in dict_dfs.keys():
@@ -290,7 +295,7 @@ class DataCuration:
             if len(list_cols) != self.tables.shape[1]:
                 var_msg = ('The length of `list_cols` is different to the '
                            'number of columns present in the table')
-                logging.error(var_msg)
+                module_logger.error(var_msg)
                 raise ValueError(var_msg)
             df = self.tables.copy()
             df.columns = list_cols
@@ -298,7 +303,7 @@ class DataCuration:
         else:
             var_msg = ('Somehow the tables are not a dictionary or a DataFrame '
                        'for function `set_headers`')
-            logging.error(var_msg)
+            module_logger.error(var_msg)
             raise ValueError(var_msg)
 
     def alter_table(self, **kwargs):
@@ -307,9 +312,97 @@ class DataCuration:
         # dictionaries
         return self.__step_no
 
-    def convert_columns(self, **kwargs):
-        # Make sure kwargs are included
-        return self.__step_no
+    def convert_columns(self, script_name=None, path=None,
+                        object_name='dict_convert', dictionary=None, **kwargs):
+        if (script_name is not None) & (object_name is not None):
+            if not os.path.exists(
+                    os.path.join(path, '{}.py'.format(script_name))):
+                raise ValueError('The script does not exist')
+            mod = importlib.import_module(script_name)
+            dict_convert = getattr(mod, object_name)
+        elif dictionary is not None:
+            if type(dictionary).__name__ != 'dict':
+                var_msg = ''
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+            dict_convert = dictionary
+        else:
+            var_msg = ('Either `dictionary` or both of `script_name` and '
+                       '`path` need to be none null')
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
+
+        if type(self.tables).__name__ == 'DataFrame':
+            df = self.tables.copy()
+            self.__convert_col(df, dict_convert, '')
+        elif type(self.tables).__name__ == 'dict':
+            dfs = self.tables
+            for key in self.tables.keys():
+                df = dfs[key].copy()
+                self.__convert_col(df, dict_convert, key)
+        else:
+            var_msg = ('The tables are in neither a DataFrame or dictionary '
+                       'format, which means something is seriously wrong...')
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
+        return None
+
+    def __convert_col(self, df, dict_convert, dict_key, **kwargs):
+        for convert_key in dict_convert.keys():
+            list_cols = dict_convert[convert_key]['columns']
+            list_stops = dict_convert[convert_key]['dtypes']
+            dict_functions = dict_convert[convert_key]['functions']
+            for col in list_cols:
+                dtype_flag = 0
+                var_dtype = df[col].dtype.name
+                for dtype in list_stops:
+                    if dtype in var_dtype:
+                        dtype_flag = 1
+                        break
+                if dtype_flag == 1:
+                    continue
+                converted_flag = 0
+                for i in range(1, len([x for x in dict_functions.keys()]) + 1):
+                    try:
+                        func_use = dict_functions[i]
+                    except:
+                        var_msg = ('The functions should be keyed in integers '
+                                   'from 1 to number of keys, this happened in '
+                                   'convert_key {} and function key {}').format(
+                            convert_key, i)
+                        module_logger.error(var_msg)
+                        raise ValueError(var_msg)
+                    if type(func_use).__name__ != 'function':
+                        var_msg = ('The function for converting is not a '
+                                   'fuction! For keys {}, {}').format(
+                            convert_key, i)
+                        module_logger.error(var_msg)
+                        raise ValueError(var_msg)
+                    try:
+                        s = func_use(df, col, **kwargs)
+                        df[col] = s.copy()
+                        converted_flag = 1
+                        break
+                    except:
+                        var_msg = ('The conversion failed for keys {}, {}, '
+                                   'trying next').format(convert_key, i)
+                        module_logger.warning(var_msg)
+                        continue
+                if converted_flag == 0:
+                    var_msg = ('The conversion for column {} for convert_key '
+                               '{} failed.').format(
+                        col, convert_key, i)
+                    module_logger.error(var_msg)
+                    self.error_handling(
+                        dict_key.split(self.__key_seperator)[0],
+                        dict_key.split(self.__key_seperator)[1],
+                        'The conversion failed to format {}'.format(
+                            convert_key),
+                        '',
+                        col,
+                        pd.np.nan,
+                        pd.np.nan
+                    )
 
     def assert_nulls(self, list_nulls=None):
         if list_nulls is None:
