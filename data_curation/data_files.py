@@ -296,10 +296,11 @@ class DataCuration:
                     module_logger.error(var_msg)
                     raise ValueError(var_msg)
             dict_dfs = self.tables.copy()
-            list_cols_org = dict_dfs[
-                [x for x in dict_dfs.keys()][0]
-            ].columns.tolist()
-            list_cols_org = [function(x) for x in list_cols_org]
+            if function is not None:
+                list_cols_org = dict_dfs[
+                    [x for x in dict_dfs.keys()][0]
+                ].columns.tolist()
+                list_cols_org = [function(x) for x in list_cols_org]
             for key in dict_dfs.keys():
                 if list_cols is not None:
                     dict_dfs[key].columns = list_cols
@@ -369,8 +370,48 @@ class DataCuration:
             raise ValueError(var_msg)
 
     def __alter_cols(self, df, dict_alter, keys, **kwargs):
+        var_tbl_type = type(self.tables).__name__
+        dfs = self.tables
         for alter_key in dict_alter.keys():
-
+            var_type = dict_alter[alter_key]['type']
+            var_col_name = dict_alter[alter_key]['col_name']
+            function = dict_alter[alter_key]['function']
+            if var_type == 'new_col':
+                if var_tbl_type == 'dict':
+                    for tbl_key in [x for x in self.tables.keys()]:
+                        try:
+                            s = function(df, keys, **kwargs)
+                            dfs[tbl_key][var_col_name] = s.copy()
+                        except:
+                            var_msg = ''
+                            module_logger.error(var_msg)
+                            # TODO add in error_handling call here
+                elif var_tbl_type == 'DataFrame':
+                    try:
+                        s = function(df, keys, **kwargs)
+                        dfs[var_col_name] = s.copy()
+                    except:
+                        var_msg = ''
+                        module_logger.error(var_msg)
+                        # TODO add in error_handling call here
+            elif var_type == 'map_df':
+                if var_tbl_type == 'dict':
+                    for tbl_key in [x for x in self.tables.keys()]:
+                        try:
+                            df = function(dfs[tbl_key], keys, **kwargs)
+                            dfs[tbl_key] = df.copy()
+                        except:
+                            var_msg = ''
+                            module_logger.error(var_msg)
+                            # TODO add in error_handling call here
+                elif var_tbl_type == 'DataFrame':
+                    try:
+                        df = function(df, keys, **kwargs)
+                        dfs = df.copy()
+                    except:
+                        var_msg = ''
+                        module_logger.error(var_msg)
+                        # TODO add in error_handling call here
 
     def convert_columns(self, script_name=None, path=None,
                         object_name='dict_convert', dictionary=None, **kwargs):
