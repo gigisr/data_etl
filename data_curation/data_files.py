@@ -299,11 +299,12 @@ class DataCuration:
             list_cols_org = dict_dfs[
                 [x for x in dict_dfs.keys()][0]
             ].columns.tolist()
+            list_cols_org = [function(x) for x in list_cols_org]
             for key in dict_dfs.keys():
                 if list_cols is not None:
                     dict_dfs[key].columns = list_cols
                 elif function is not None:
-                    dict_dfs[key].columns = [function(x) for x in list_cols_org]
+                    dict_dfs[key].columns = list_cols_org
             self.set_table(dict_dfs, overwrite=True)
         elif var_type == 'DataFrame':
             if len(list_cols) != self.tables.shape[1]:
@@ -323,11 +324,53 @@ class DataCuration:
             module_logger.error(var_msg)
             raise ValueError(var_msg)
 
-    def alter_table(self, **kwargs):
-        # Make sure kwargs are included
-        # Have a dictionary_name attribute so that it works with different named
-        # dictionaries
-        return self.__step_no
+    def alter_table(self, path=None, script_name=None, object_name=None,
+                    dictionary=None, **kwargs):
+        """
+        Use this functionality to make alterations to the table(s)
+        """
+        # TODO move this check to own function (applies to convert_columns too
+        if (script_name is not None) & (object_name is not None):
+            if not os.path.exists(
+                    os.path.join(path, '{}.py'.format(script_name))):
+                raise ValueError('The script does not exist')
+            mod = importlib.import_module(script_name)
+            dict_alter = getattr(mod, object_name)
+        elif dictionary is not None:
+            if type(dictionary).__name__ != 'dict':
+                var_msg = ''
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+            dict_alter = dictionary
+        else:
+            var_msg = ('Either `dictionary` or both of `script_name` and '
+                       '`path` need to be none null')
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
+
+        if type(self.tables).__name__ == 'DataFrame':
+            df = self.tables.copy()
+            self.__alter_col(
+                df, dict_alter, [self.__key_1, self.__key_2, self.__key_3],
+                **kwargs
+            )
+        elif type(self.tables).__name__ == 'dict':
+            dfs = self.tables
+            for key in self.tables.keys():
+                df = dfs[key].copy()
+                self.__alter_col(
+                    df, dict_alter, [self.__key_1, self.__key_2, self.__key_3],
+                    **kwargs
+                )
+        else:
+            var_msg = ('The tables are in neither a DataFrame or dictionary '
+                       'format, which means something is seriously wrong...')
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
+
+    def __alter_cols(self, df, dict_alter, keys, **kwargs):
+        for alter_key in dict_alter.keys():
+
 
     def convert_columns(self, script_name=None, path=None,
                         object_name='dict_convert', dictionary=None, **kwargs):
@@ -351,18 +394,17 @@ class DataCuration:
 
         if type(self.tables).__name__ == 'DataFrame':
             df = self.tables.copy()
-            self.__convert_col(df, dict_convert, '')
+            self.__convert_col(df, dict_convert, '', **kwargs)
         elif type(self.tables).__name__ == 'dict':
             dfs = self.tables
             for key in self.tables.keys():
                 df = dfs[key].copy()
-                self.__convert_col(df, dict_convert, key)
+                self.__convert_col(df, dict_convert, key, **kwargs)
         else:
             var_msg = ('The tables are in neither a DataFrame or dictionary '
                        'format, which means something is seriously wrong...')
             module_logger.error(var_msg)
             raise ValueError(var_msg)
-        return None
 
     def __convert_col(self, df, dict_convert, dict_key, **kwargs):
         for convert_key in dict_convert.keys():
