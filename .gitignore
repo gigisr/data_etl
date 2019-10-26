@@ -3,3 +3,4 @@ logs/*.log
 .idea/*
 */__pycache__/*
 pickles/*
+__pycache__/*
