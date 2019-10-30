@@ -9,13 +9,6 @@ import numpy as np
 
 module_logger = logging.getLogger(__name__)
 
-# TODO unit tests
-# TODO Where self.tables = X etc with self.headers... Then we need to
-#  use the inbuilt functions rather than asserting it directly
-# TODO Change returns for specific functions to not be the default self.step_no
-# TODO clean up the code
-# TODO flag to print out, or not, all the starting and finishing of functions
-
 
 class DataCuration:
     __step_no = 0
@@ -184,7 +177,7 @@ class DataCuration:
             f"Completed `find_files`, the list of files is: {self.list_files}")
 
     def reading_in(self, function=None, path=None, script_name=None,
-                   func_name="read_files", overwrite=False, **kwargs):
+                   func_name="read_files", overwrite=True, **kwargs):
         """
         Using an externally defined reading in function, and the internally
         defined list of files, read in each of the tables required.
@@ -246,31 +239,45 @@ class DataCuration:
 
         module_logger.info("Completed `reading_in`")
 
-    def set_table(self, df, dict_key=None, overwrite=False):
+    def set_table(self, tables, dict_key=None, overwrite=True):
         """
         If self.tables is a dictionary set df to key else overwrite existing
         table if argument is True
         """
         module_logger.info("Starting `set_table`")
-        if self.tables == dict():
-            self.tables = df
-        elif (type(df).__name__ == "dict") & (overwrite is True):
-            self.tables = df
-        elif ((type(self.tables).__name__ == "dict") &
-                (dict_key is not None)):
-            # TODO make sure that the columns are the same as any existing
-            #  tables if a new table is being added
-            self.tables[dict_key] = df
-        elif ((type(self.tables).__name__ == "DataFrame") &
-              (overwrite is True)):
-            self.tables = df
+        if (overwrite is True) & (dict_key is None):
+            self.tables = tables
+        elif (
+            (overwrite is True) &
+            (dict_key is not None) &
+            (type(self.tables).__name__ == 'dict') &
+            (type(tables).__name__ == 'DataFrame')
+        ):
+            self.tables[dict_key] = tables
+        elif (
+            (overwrite is False) &
+            (dict_key is not None) &
+            (type(self.tables).__name__ == 'dict') &
+            (type(tables).__name__ == 'DataFrame')
+        ):
+            if dict_key not in [key for key in self.tables.keys()]:
+                self.tables[dict_key] = tables
+            else:
+                var_msg = (
+                    f'The combination of attributes has resulted in no change: '
+                    f'`self.tables` type - {type(self.tables).__name__}, '
+                    f'`tables` type - {type(tables).__name__}, `dict_key` - '
+                    f'{dict_key}, `overwrite` - {overwrite}')
+                module_logger.error(var_msg)
+                raise AttributeError(var_msg)
         else:
             var_msg = (
-                f"The combinations provided are not compatible: `df` - "
-                f"{type(df).__name__}, `self.tables` - "
-                f"{type(self.tables).__name__}, `overwrite` - {overwrite}")
+                f'The combination of attributes has resulted in no change: '
+                f'`self.tables` type - {type(self.tables).__name__}, `tables` '
+                f'type - {type(tables).__name__}, `dict_key` - {dict_key}, '
+                f'`overwrite` - {overwrite}')
             module_logger.error(var_msg)
-            raise ValueError(var_msg)
+            raise AttributeError(var_msg)
         module_logger.info("Completed `set_table`")
 
     def concatenate_tables(self):
@@ -287,12 +294,14 @@ class DataCuration:
             df = pd.concat(self.tables, axis=1)
         elif len([key for key in self.tables.keys()]) == 1:
             dict_df = self.tables.copy()
-            df = dict_df[[key for key in dict_df.keys()][0]].copy()
+            dict_key = [key for key in dict_df.keys()][0]
+            df = dict_df[dict_key].copy()
+            df['level_0'] = dict_key
         else:
             var_msg = "The dictionary `self.tables` is empty"
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
-        self.tables = df.copy()
+        self.set_table(df, overwrite=True)
         module_logger.info("Completed `concatenate_tables`")
 
     def dictionary_tables(self, key=None):
@@ -317,7 +326,7 @@ class DataCuration:
                 f"There is no {var_cycle} column present in the table")
         for val in df[var_cycle].unique().tolist():
             dict_dfs[val] = df.loc[df[var_cycle] == val].copy()
-        self.tables = dict_dfs
+        self.set_table(dict_dfs)
         module_logger.info("Completed `dictionary_tables`")
 
     def read_in_headers(self, function=None, path=None, script_name=None,
@@ -367,7 +376,6 @@ class DataCuration:
             raise ValueError(var_msg)
 
         module_logger.info("Completed `read_in_headers`")
-        return self.__step_no
 
     def link_headers(self, function=None, path=None, script_name=None,
                      func_name="link_headers", **kwargs):
@@ -419,7 +427,6 @@ class DataCuration:
             raise ValueError(var_msg)
 
         module_logger.info("Completed `link_headers`")
-        return self.__step_no
 
     def assert_linked_headers(self, **kwargs):
         # TODO Make sure kwargs is included
@@ -451,10 +458,7 @@ class DataCuration:
             self.tables[key].columns = list_new_names
             self.tables[key].drop(list_remove_names, axis=1, inplace=True)
 
-
-
         module_logger.info("Completed `assert_linked_headers`")
-        return self.__step_no
 
     def set_headers(self, list_cols=None, function=None):
         module_logger.info("Starting `set_headers`")
