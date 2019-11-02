@@ -17,13 +17,14 @@ class DataCuration:
     __key_1 = None
     __key_2 = None
     __key_3 = None
+    __grouping = None
     tables = dict()
     df_appended = None
     list_files = list()
     __key_separator = " -:- "
     __link_headers = dict()
 
-    def __init__(self, key_1, key_2=None, key_3=None):
+    def __init__(self, grouping, key_1, key_2=None, key_3=None):
         """
         All data actions are taken on all tables, the aim is to process data to
         end up with a uniform data set that can be utilised and is consistent.
@@ -37,12 +38,13 @@ class DataCuration:
         self.__key_1 = str(key_1)
         self.__key_2 = str(key_2)
         self.__key_3 = str(key_3)
+        self.__grouping = grouping
         # sub_file, e.g. sheet for a spreadsheet, may not always be applicable
         df_issues = pd.DataFrame(
             columns=[
                 "key_1", "key_2", "key_3", "file", "sub_file", "step_number",
                 "issue_short_desc", "issue_long_desc", "column", "issue_count",
-                "issue_idx"
+                "issue_idx", "grouping"
             ]
         )
         df_issues["step_number"] = df_issues["step_number"].astype(int)
@@ -61,7 +63,7 @@ class DataCuration:
         list_vals = [
             self.__key_1, self.__key_2, self.__key_3, file, subfile,
             self.__step_no, issue_short_desc, issue_long_desc, column,
-            issue_count, issue_idx
+            issue_count, issue_idx, self.__grouping
         ]
         try:
             df.loc[df.shape[0]] = list_vals
@@ -428,11 +430,7 @@ class DataCuration:
 
         module_logger.info("Completed `link_headers`")
 
-    def assert_linked_headers(self, **kwargs):
-        # TODO Make sure kwargs is included
-        # TODO Need to see if we can isolate just a set of new tables? Maybe
-        #  have a list of dictionary keys that have had their headers
-        #  done already?
+    def assert_linked_headers(self):
         module_logger.info("Starting `assert_linked_headers`")
 
         list_ideal_headers = self.headers[
@@ -457,6 +455,14 @@ class DataCuration:
 
             self.tables[key].columns = list_new_names
             self.tables[key].drop(list_remove_names, axis=1, inplace=True)
+
+            for col in [
+                col for col in list_ideal_headers if
+                col not in self.tables[key].columns.tolist()
+            ]:
+                self.tables[key][col] = np.nan
+
+            self.tables[key] = self.tables[key][list_ideal_headers].copy()
 
         module_logger.info("Completed `assert_linked_headers`")
 
@@ -885,4 +891,6 @@ class DataCuration:
         module_logger.info("Completed `append_table`")
 
     def get_step_no(self):
+        module_logger.info("Starting `get_step_no`")
+        module_logger.info("Completed `get_step_no`")
         return self.__step_no
