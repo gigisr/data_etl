@@ -1,7 +1,6 @@
 # This is the section where we put all the classes together in combinations
 # that are required for specific data sets
 import logging
-import os
 from datetime import datetime
 import pickle
 
