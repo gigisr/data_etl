@@ -9,11 +9,13 @@ import pickle
 import pandas as pd
 
 import connections
-from data_curation import DataCuration
-from data_curation import Checks
+from data_curation import DataCuration, Checks
 
 # TODO add in logging
 # TODO data_files class working
+# TODO checks class working
+# TODO connections class working
+# TODO reporting class working
 # TODO some sort of checking class working
 # TODO set up a dedicated environment for this
 
@@ -87,8 +89,11 @@ if __name__ == "__main__":
 
     check.set_step_no(5)
     check.apply_checks(data.tables, "checks_1", ".")
+    check.table_look(data.tables, 0)
 
-    pickle.dump(data, open("../pickles/df.pkl", "wb"))
+    pickle.dump(
+        {'data': data, 'checks': check},
+        open("../pickles/dict_dc.pkl", "wb"))
 
     logging.info("Script time taken: {}".format(
         str(datetime.now() - var_start_time)))

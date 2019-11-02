@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 
 module_logger = logging.getLogger(__name__)
+# TODO use " instead of '
+# TODO allow a filtered DataFrame to be output from a check optionally
 
 
 class Checks:
@@ -41,7 +43,8 @@ class Checks:
         happens with the error. By putting it into a single function it will
         hopefully make the code briefer.
         """
-        # TODO work out how to add in `file` and `subfile`
+        # TODO work out how to add in `file` and `subfile` where data is a
+        #  dictionary
         module_logger.info("Logging an error with `error_handling`")
         df = self.df_issues.copy()
         list_vals = [
@@ -93,9 +96,29 @@ class Checks:
         module_logger.info("Completed `apply_checks`")
 
     def __apply_the_check(self, df, dict_check_info, check_key, **kwargs):
+        module_logger.info(f"Starting check `{check_key}`")
+        var_required_keys = 0
+        if 'calc_condition' not in dict_check_info:
+            var_required_keys += 1
+            var_msg = 'The check requires a value for key `calc_condition`'
+            module_logger.error(var_msg)
+        if 'long_description' not in dict_check_info:
+            var_required_keys += 1
+            var_msg = 'The check requires a value for key `long_description`'
+            module_logger.error(var_msg)
+        if var_required_keys > 0:
+            var_msg = (f"Not all the required keys are present for the "
+                       f"check {check_key}")
+            module_logger.error(var_msg)
+            raise AttributeError(var_msg)
+        func_calc_condition = dict_check_info['calc_condition']
+        func_long_description = dict_check_info['long_description']
+        func_check_condition = (
+            lambda df, col, condition, **kwargs: condition.sum() > 0 if
+            dict_check_info.get('check_condition') is None else
+            dict_check_info['check_condition'])
         list_columns = ([] if dict_check_info.get('columns') is None else
                         dict_check_info['columns'])
-        func_check_condition = dict_check_info['check_condition']
         func_count_condition = (
             lambda df, col, condition, **kwargs: condition.sum() if
             dict_check_info.get('count_condition') is None else
@@ -108,51 +131,78 @@ class Checks:
             lambda df, col, condition, **kwargs: col if
             dict_check_info.get('relevant_columns') is None else
             dict_check_info['relevant_columns'])
-        func_long_description = dict_check_info['long_description']
         if len(list_columns) > 0:
             for col in list_columns:
-                s_check_condition = func_check_condition(df, col, **kwargs)
-                var_count_condition = func_count_condition(
-                    df, col, s_check_condition, **kwargs)
-                s_index_conditions = func_index_position(
-                    df, col, s_check_condition, **kwargs)
-                var_relevant_columns = func_relevant_columns(
-                    df, col, s_check_condition, **kwargs)
-                var_long_description = func_long_description(
-                    df, col, s_check_condition, **kwargs)
-                if type(var_long_description).__name__ is not 'str':
-                    var_msg = (
-                        'The variable `var_long_description` is not a string!')
-                    module_logger.error(var_msg)
-                # TODO check that var_relevant_columns is a string
-                # TODO check that var_count_condition is an integer
-                # TODO check that s_check_condition, s_index_condition is
-                #  a Series
-                if s_check_condition.sum() > 0:
-                    self.error_handling(
-                        np.nan, np.nan, check_key, var_long_description,
-                        var_relevant_columns, var_count_condition,
-                        s_index_conditions)
+                self.__evaluate_check(
+                    check_key, df, col, func_calc_condition,
+                    func_check_condition, func_count_condition,
+                    func_index_position, func_relevant_columns,
+                    func_long_description, **kwargs)
         else:
             col = np.nan
-            s_check_condition = func_check_condition(df, col, **kwargs)
-            s_count_condition = func_count_condition(
-                df, col, s_check_condition, **kwargs)
-            s_index_conditions = func_index_position(
-                df, col, s_check_condition, **kwargs)
-            var_relevant_columns = func_relevant_columns(
-                df, col, s_check_condition, **kwargs)
-            var_long_description = func_long_description(
-                df, col, s_check_condition, **kwargs)
-            # TODO check that var_long_description is a string
-            # TODO check that var_relevant_columns is a string
-            # TODO check that var_count_condition is an integer
-            # TODO check that s_check_condition, s_index_condition is a Series
-            if s_check_condition.sum() > 0:
-                self.error_handling(
-                    np.nan, np.nan, check_key, var_long_description,
-                    var_relevant_columns, s_count_condition,
-                    s_index_conditions)
+            self.__evaluate_check(
+                check_key, df, col, func_calc_condition, func_check_condition,
+                func_count_condition, func_index_position,
+                func_relevant_columns, func_long_description, **kwargs)
+
+        module_logger.info(f"Completed check `{check_key}`")
+
+    def __evaluate_check(
+            self, check_key, df, col, func_calc_condition, func_check_condition,
+            func_count_condition, func_index_position, func_relevant_columns,
+            func_long_description, **kwargs):
+        module_logger.info(
+            f"Starting evaluating check `{check_key}` for column {col}")
+        s_calc_condition = func_calc_condition(df, col, **kwargs)
+        var_check_condition = func_check_condition(
+            df, col, s_calc_condition, **kwargs)
+        var_count_condition = func_count_condition(
+            df, col, s_calc_condition, **kwargs)
+        s_index_conditions = func_index_position(
+            df, col, s_calc_condition, **kwargs)
+        var_relevant_columns = func_relevant_columns(
+            df, col, s_calc_condition, **kwargs)
+        var_long_description = func_long_description(
+            df, col, s_calc_condition, **kwargs)
+        if type(var_long_description).__name__ != 'str':
+            var_msg = (
+                f'The variable `var_long_description` is not a string! It is a'
+                f' {type(var_long_description).__name__}')
+            module_logger.error(var_msg)
+        if type(var_relevant_columns).__name__ != 'str':
+            var_msg = (
+                f'The variable `var_relevant_columns` is not a string! It is a'
+                f' {type(var_relevant_columns).__name__}')
+            module_logger.error(var_msg)
+        if 'int' not in type(var_count_condition).__name__:
+            var_msg = (
+                f'The variable `var_count_condition` is not an integer! It is a'
+                f' {type(var_count_condition).__name__}')
+            module_logger.error(var_msg)
+        if type(s_calc_condition).__name__ != 'Series':
+            var_msg = (
+                f'The variable `s_calc_condition` is not a Series! It is a '
+                f'{type(s_calc_condition).__name__}')
+            module_logger.error(var_msg)
+        if type(s_index_conditions).__name__ != 'Series':
+            var_msg = (
+                f'The variable `s_index_conditions` is not a Series! It is a '
+                f'{type(s_index_conditions).__name__}')
+            module_logger.error(var_msg)
+        if var_check_condition:
+            self.error_handling(
+                np.nan, np.nan, check_key, var_long_description,
+                var_relevant_columns, var_count_condition,
+                ', '.join(
+                    [
+                        str(item) for item in
+                        s_index_conditions.loc[
+                            s_index_conditions].index.tolist()
+                    ]
+                )
+            )
+        module_logger.info(
+            f"Completed evaluating check `{check_key}` for column {col}")
 
     def get_issue_count(self, issue_number_min=None, issue_number_max=None):
         module_logger.info("Starting `get_issue_count`")
@@ -164,6 +214,22 @@ class Checks:
         var_count = df.shape[0]
         module_logger.info("Completed `get_issue_count`")
         return var_count
+
+    def table_look(self, table, issue_idx):
+        module_logger.info("Starting `table_look`")
+        if issue_idx not in self.df_issues.index.tolist():
+            var_msg = (f"The requested issue index, {issue_idx}, is not "
+                       f"present in the `df_issues` table")
+            module_logger.error(var_msg)
+            raise AttributeError(var_msg)
+        df_check = table.loc[
+            [
+                int(item) for item in
+                self.df_issues.loc[issue_idx, 'issue_idx'].split(', ')
+            ]
+        ]
+        module_logger.info("Completed `table_look`")
+        return df_check
 
     def set_step_no(self, step_no):
         """
