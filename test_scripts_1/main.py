@@ -10,6 +10,7 @@ import pandas as pd
 
 import connections
 from data_curation import DataCuration
+from data_curation import Checks
 
 # TODO add in logging
 # TODO data_files class working
@@ -35,6 +36,7 @@ if __name__ == "__main__":
     # Testing shortcut
     cnxs = connections.Connections()
     data = DataCuration("A")
+    check = Checks("A")
 
     # Data curation testing
 
@@ -82,6 +84,9 @@ if __name__ == "__main__":
     data.concatenate_tables()
     pickle.dump(data, open("../pickles/df.pkl", "wb"))
     data.append_table(data.tables)
+
+    check.set_step_no(5)
+    check.apply_checks(data.tables, "checks_1", ".")
 
     pickle.dump(data, open("../pickles/df.pkl", "wb"))
 

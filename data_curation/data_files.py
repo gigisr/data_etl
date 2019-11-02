@@ -428,11 +428,7 @@ class DataCuration:
 
         module_logger.info("Completed `link_headers`")
 
-    def assert_linked_headers(self, **kwargs):
-        # TODO Make sure kwargs is included
-        # TODO Need to see if we can isolate just a set of new tables? Maybe
-        #  have a list of dictionary keys that have had their headers
-        #  done already?
+    def assert_linked_headers(self):
         module_logger.info("Starting `assert_linked_headers`")
 
         list_ideal_headers = self.headers[
@@ -457,6 +453,14 @@ class DataCuration:
 
             self.tables[key].columns = list_new_names
             self.tables[key].drop(list_remove_names, axis=1, inplace=True)
+
+            for col in [
+                col for col in list_ideal_headers if
+                col not in self.tables[key].columns.tolist()
+            ]:
+                self.tables[key][col] = np.nan
+
+            self.tables[key] = self.tables[key][list_ideal_headers].copy()
 
         module_logger.info("Completed `assert_linked_headers`")
 
@@ -885,4 +889,6 @@ class DataCuration:
         module_logger.info("Completed `append_table`")
 
     def get_step_no(self):
+        module_logger.info("Starting `get_step_no`")
+        module_logger.info("Completed `get_step_no`")
         return self.__step_no

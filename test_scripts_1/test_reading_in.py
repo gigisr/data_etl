@@ -14,7 +14,7 @@ def list_the_files(path):
     return list_files
 
 
-def read_files(list_files, **kwargs):
+def read_files(list_files):
     dict_files = dict()
     for file in list_files:
         xl = pd.ExcelFile(file)
