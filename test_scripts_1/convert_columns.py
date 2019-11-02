@@ -5,6 +5,18 @@ import pandas as pd
 dict_convert = dict()
 
 
+def func_string_to_int(df, col):
+    s = df[col].copy()
+    s = s.str.replace(',', '')  # thousand separators
+    s = s.str.replace('%', '')  # percentage sign
+    s = s.str.replace('£', '')  # pound stirling sign
+    s = s.str.replace('$', '')  # dollar sign
+    s = s.str.replace('€', '')  # euro sign
+    s = s.str.replace('¥', '')  # yen sign
+    s = s.astype(int)
+    return s
+
+
 def func_string_to_float(df, col):
     s = df[col].copy()
     s = s.str.replace(',', '')  # thousand separators
@@ -14,7 +26,6 @@ def func_string_to_float(df, col):
     s = s.str.replace('€', '')  # euro sign
     s = s.str.replace('¥', '')  # yen sign
     s = s.astype(float)
-
     return s
 
 
@@ -23,8 +34,9 @@ dict_convert['int'] = {
     'dtypes': ['int', 'float'],
     'functions': {
         1: lambda df, col, **kwargs: df[col].astype(int),
-        2: lambda df, col, **kwargs: df[col].astype(float),
-        3: lambda df, col, **kwargs: func_string_to_float(df, col)
+        2: lambda df, col, **kwargs: func_string_to_int(df, col),
+        3: lambda df, col, **kwargs: df[col].astype(float),
+        4: lambda df, col, **kwargs: func_string_to_float(df, col)
     }
 }
 dict_convert['float'] = {
@@ -35,6 +47,7 @@ dict_convert['float'] = {
         2: lambda df, col, **kwargs: func_string_to_float(df, col)
     }
 }
+# TODO have a mash-up function that also takes care of Excel dates?
 dict_convert['date'] = {
     'columns': ['date_1', 'date_2'],
     'dtypes': ['datetime'],
