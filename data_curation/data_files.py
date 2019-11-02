@@ -17,13 +17,14 @@ class DataCuration:
     __key_1 = None
     __key_2 = None
     __key_3 = None
+    __grouping = None
     tables = dict()
     df_appended = None
     list_files = list()
     __key_separator = " -:- "
     __link_headers = dict()
 
-    def __init__(self, key_1, key_2=None, key_3=None):
+    def __init__(self, grouping, key_1, key_2=None, key_3=None):
         """
         All data actions are taken on all tables, the aim is to process data to
         end up with a uniform data set that can be utilised and is consistent.
@@ -37,12 +38,13 @@ class DataCuration:
         self.__key_1 = str(key_1)
         self.__key_2 = str(key_2)
         self.__key_3 = str(key_3)
+        self.__grouping = grouping
         # sub_file, e.g. sheet for a spreadsheet, may not always be applicable
         df_issues = pd.DataFrame(
             columns=[
                 "key_1", "key_2", "key_3", "file", "sub_file", "step_number",
                 "issue_short_desc", "issue_long_desc", "column", "issue_count",
-                "issue_idx"
+                "issue_idx", "grouping"
             ]
         )
         df_issues["step_number"] = df_issues["step_number"].astype(int)
@@ -61,7 +63,7 @@ class DataCuration:
         list_vals = [
             self.__key_1, self.__key_2, self.__key_3, file, subfile,
             self.__step_no, issue_short_desc, issue_long_desc, column,
-            issue_count, issue_idx
+            issue_count, issue_idx, self.__grouping
         ]
         try:
             df.loc[df.shape[0]] = list_vals

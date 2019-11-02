@@ -14,20 +14,22 @@ class Checks:
     __key_1 = None
     __key_2 = None
     __key_3 = None
+    __grouping = None
     df_issues = None
 
-    def __init__(self, key_1, key_2=None, key_3=None):
+    def __init__(self, grouping, key_1, key_2=None, key_3=None):
         module_logger.info("Initialising `Checks` object")
         # Three keys, all good things come in threes
         self.__key_1 = str(key_1)
         self.__key_2 = str(key_2)
         self.__key_3 = str(key_3)
+        self.__grouping = grouping
         # Initialise the `df_issues` table
         df_issues = pd.DataFrame(
             columns=[
                 "key_1", "key_2", "key_3", "file", "sub_file", "step_number",
                 "issue_short_desc", "issue_long_desc", "column", "issue_count",
-                "issue_idx"
+                "issue_idx", "grouping"
             ]
         )
         df_issues["step_number"] = df_issues["step_number"].astype(int)
@@ -48,7 +50,7 @@ class Checks:
         list_vals = [
             self.__key_1, self.__key_2, self.__key_3, file, subfile,
             self.__step_no, issue_short_desc, issue_long_desc, column,
-            issue_count, issue_idx
+            issue_count, issue_idx, self.__grouping
         ]
         try:
             df.loc[df.shape[0]] = list_vals

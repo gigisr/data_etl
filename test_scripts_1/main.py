@@ -37,8 +37,8 @@ if __name__ == "__main__":
 
     # Testing shortcut
     cnxs = connections.Connections()
-    data = DataCuration("A")
-    check = Checks("A")
+    data = DataCuration(var_start_time, "A")
+    check = Checks(var_start_time, "A")
 
     # Data curation testing
 
