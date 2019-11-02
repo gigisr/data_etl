@@ -212,22 +212,6 @@ class DataCuration:
 
         try:
             dfs = function(self.list_files, **kwargs)
-            if overwrite is False:
-                df_org = self.tables.copy()
-                df_org.update(dfs)
-            elif overwrite is True:
-                pass
-            else:
-                var_msg = ("The attribute `overwrite` in the function "
-                           "`reading_in` needs to be `True` or `False`")
-                module_logger.error(var_msg)
-                raise ValueError(var_msg)
-            self.set_table(dfs, overwrite=overwrite)
-            if type(dfs).__name__ == "DataFrame":
-                module_logger.info(f"The table has shape '{dfs.shape}'")
-            for key in dfs:
-                module_logger.info(
-                    f"The table with key '{key}' has shape '{dfs[key].shape}'")
         except AttributeError:
             if len([x for x in kwargs.keys()]) > 0:
                 var_msg = (f"Function reading_in, kwargs may have been passed "
@@ -238,6 +222,22 @@ class DataCuration:
                            f"does not exist in the {script_name} script.")
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
+        if overwrite is False:
+            df_org = self.tables.copy()
+            df_org.update(dfs)
+        elif overwrite is True:
+            pass
+        else:
+            var_msg = ("The attribute `overwrite` in the function "
+                       "`reading_in` needs to be `True` or `False`")
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
+        self.set_table(dfs, overwrite=overwrite)
+        if type(dfs).__name__ == "DataFrame":
+            module_logger.info(f"The table has shape '{dfs.shape}'")
+        for key in dfs:
+            module_logger.info(
+                f"The table with key '{key}' has shape '{dfs[key].shape}'")
 
         module_logger.info("Completed `reading_in`")
 

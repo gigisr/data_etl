@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 import pickle
 
-from data_curation import DataCuration, Checks, Connections, \
+from data_curation import DataCuration, Checks, Connections, Reporting, \
     func_check_for_issues, func_initialise_logging
 
 if __name__ == "__main__":
@@ -22,6 +22,7 @@ if __name__ == "__main__":
     cnxs = Connections()
     data = DataCuration(var_start_time, "A")
     check = Checks(var_start_time, "A")
+    reporting = Reporting(var_start_time, "A")
 
     # Set up connections
     cnxs.add_cnx(
@@ -68,9 +69,15 @@ if __name__ == "__main__":
     func_check_for_issues(check.get_issue_count(5, 5), cnxs, 'df_issues',
                           data.df_issues, 2, var_checks_1_pass)
 
+    # Now the data is cleansed do the reporting, this would ideally be post
+    # writing to DB
+    reporting.form_tables(data.tables, script_name='reporting_1', path='.')
+    reporting.set_file_path('../data/deliverables/pipeline_test_1/')
+    reporting.apply_reporting(script_name='reporting_1', path='.')
+
     # Temporary snapshot for testing
     pickle.dump(
-        {'data': data, 'checks': check},
+        {'data': data, 'checks': check, 'report': reporting},
         open("../pickles/dict_dc.pkl", "wb"))
 
     logging.info("Script time taken: {}".format(

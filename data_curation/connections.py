@@ -7,8 +7,9 @@ import pandas as pd
 import pyodbc
 
 module_logger = logging.getLogger(__name__)
-# TODO account for tables not existing and existing when writing to the cnx
-# TODO put things in place for sqlite3 to be utilised
+# TODO account for tables not existing and existing when writing to the cnx,
+#  ideally any tables used should have been pre-emptively setup in the required
+#  databases
 
 
 class Connections:
@@ -43,9 +44,8 @@ class Connections:
                        'argument `overwrite=True` to overwrite')
             module_logger.error(var_msg)
             raise ValueError(var_msg)
-        if cnx_type not in ('sqlite3', 'db'):
-            var_msg = ('The `cnx_type` argument only takes values `sqlite` '
-                       'or `db`')
+        if cnx_type not in ['sqlite3']:
+            var_msg = 'The `cnx_type` argument only takes values `sqlite3`'
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
         if cnx_type == 'sqlite3':
@@ -63,11 +63,6 @@ class Connections:
                 'cnx_type': cnx_type,
                 'file_path': file_path,
                 'table_name': table_name
-            }
-        elif cnx_type == 'db':
-            self.__dict_cnx[cnx_key] = {
-                'cnx_type': cnx_type,
-                'cnx_string': ''
             }
         self.test_cnx(cnx_key)
         module_logger.info("Completed `add_cnx`")
