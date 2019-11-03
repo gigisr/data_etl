@@ -466,7 +466,8 @@ class DataCuration:
 
         module_logger.info("Completed `assert_linked_headers`")
 
-    def set_headers(self, list_cols=None, function=None):
+    def set_headers(self, list_cols=None, function=None, ideal_headers=None,
+                    required_headers=None):
         module_logger.info("Starting `set_headers`")
         if list_cols is not None:
             if type(list_cols).__name__ != "list":
@@ -478,6 +479,18 @@ class DataCuration:
             if type(function).__name__ != "function":
                 var_msg = ("The argument `function` of function `set_headers` "
                            "needs to be a function")
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+        elif ideal_headers is not None:
+            if type(ideal_headers).__name__ != 'list':
+                var_msg = ("The argument `ideal_headers` of function "
+                           "`set_headers` needs to be a list")
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+        elif required_headers is not None:
+            if type(required_headers).__name__ != 'list':
+                var_msg = ("The argument `required_headers` of function "
+                           "`set_headers` needs to be a list")
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
         var_type = type(self.tables).__name__
@@ -498,17 +511,29 @@ class DataCuration:
                                "number of columns present in the table")
                     module_logger.error(var_msg)
                     raise ValueError(var_msg)
-            dict_dfs = self.tables.copy()
-            if function is not None:
+            elif function is not None:
                 list_cols_org = dict_dfs[
                     [x for x in dict_dfs.keys()][0]
                 ].columns.tolist()
-                list_cols_org = [function(x) for x in list_cols_org]
+                list_cols = [function(x) for x in list_cols_org]
             for key in dict_dfs.keys():
                 if list_cols is not None:
                     dict_dfs[key].columns = list_cols
                 elif function is not None:
-                    dict_dfs[key].columns = list_cols_org
+                    dict_dfs[key].columns = list_cols
+                elif ideal_headers is not None:
+                    for col in [
+                        col for col in ideal_headers if
+                        col not in dict_dfs[key].columns.tolist()
+                    ]:
+                        dict_dfs[key][col] = np.nan
+                    dict_dfs[key] = dict_dfs[key][ideal_headers].copy()
+                elif required_headers is not None:
+                    for col in [
+                        col for col in required_headers if
+                        col not in dict_dfs[key].columns.tolist()
+                    ]:
+                        dict_dfs[key][col] = np.nan
             self.set_table(dict_dfs, overwrite=True)
         elif var_type == "DataFrame":
             if len(list_cols) != self.tables.shape[1]:
@@ -521,6 +546,19 @@ class DataCuration:
                 df.columns = list_cols
             elif function is not None:
                 df.columns = [function(x) for x in df.columns.tolist()]
+            elif ideal_headers is not None:
+                for col in [
+                    col for col in ideal_headers if
+                    col not in df.columns.tolist()
+                ]:
+                    df[col] = np.nan
+                df = df[ideal_headers].copy()
+            elif required_headers is not None:
+                for col in [
+                    col for col in required_headers if
+                    col not in df.columns.tolist()
+                ]:
+                    df[col] = np.nan
             self.set_table(df, overwrite=True)
         else:
             var_msg = ("Somehow the tables are not a dictionary or a DataFrame "

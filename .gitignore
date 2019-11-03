@@ -5,3 +5,5 @@ logs/*.log
 pickles/*
 __pycache__/*
 *~*
+data/processed/*
+data/deliverables/*

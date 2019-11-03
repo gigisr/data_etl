@@ -40,7 +40,7 @@ dict_convert['int'] = {
     }
 }
 dict_convert['float'] = {
-    'columns': [],
+    'columns': ['lat', 'lng'],
     'dtypes': ['float'],
     'functions': {
         1: lambda df, col, **kwargs: df[col].astype(float),

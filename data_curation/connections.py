@@ -10,6 +10,7 @@ module_logger = logging.getLogger(__name__)
 # TODO account for tables not existing and existing when writing to the cnx,
 #  ideally any tables used should have been pre-emptively setup in the required
 #  databases
+# TODO add MSSQL connection handling
 
 
 class Connections:
@@ -89,6 +90,28 @@ class Connections:
                 module_logger.error(var_msg)
                 raise AttributeError(var_msg)
         module_logger.info("Completed `test_cnx`")
+
+    def read_from_db(self, cnx_key, sql_stmt):
+        module_logger.info("Starting `read_from_db`")
+        dict_cnx = self.__dict_cnx[cnx_key]
+        var_cnx_type = dict_cnx['cnx_type']
+        df = pd.DataFrame()
+        if var_cnx_type == 'blank':
+            var_msg = 'Trying to use `read_from_db` using a blank connection'
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
+        elif var_cnx_type == 'sqlite3':
+            cnx = sqlite3.connect(dict_cnx['file_path'])
+            try:
+                df = pd.read_sql(sql_stmt)
+                cnx.close()
+            except:
+                cnx.close()
+                var_msg = 'Reading in using a `sqlite3` has failed'
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+        module_logger.info("Completed `read_from_db`")
+        return df
 
     def write_to_db(self, cnx_key, table):
         module_logger.info("Starting `write_to_db`")
