@@ -65,7 +65,7 @@ if __name__ == "__main__":
     data.append_table(data.tables)
 
     check.set_step_no(5)
-    check.set_defaults(idx_flag=False)
+    check.set_defaults(idx_flag=True)
     check.apply_checks(data.tables, "checks_1", ".")
     func_check_for_issues(check.get_issue_count(5, 5), cnxs, 'df_issues',
                           check.df_issues, 2, var_checks_1_pass, var_start_time)

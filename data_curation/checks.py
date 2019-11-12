@@ -18,13 +18,14 @@ class Checks:
     __grouping = None
     df_issues = None
     __checks_defaults = {
-        'columns': list(),
+        'columns': [np.nan],
         'check_condition':
             lambda df, col, condition, **kwargs: condition.sum() > 0,
         'count_condition': lambda df, col, condition, **kwargs: condition.sum(),
         'index_position': lambda df, col, condition, **kwargs: condition,
         'relevant_columns': lambda df, col, condition, **kwargs: col,
-        'idx_flag': True
+        'idx_flag': True,
+        'category': np.nan
     }
 
     def __init__(self, grouping, key_1, key_2=None, key_3=None):
@@ -38,8 +39,8 @@ class Checks:
         df_issues = pd.DataFrame(
             columns=[
                 "key_1", "key_2", "key_3", "file", "sub_file", "step_number",
-                "issue_short_desc", "issue_long_desc", "column", "issue_count",
-                "issue_idx", "grouping"
+                "category", "issue_short_desc", "issue_long_desc", "column",
+                "issue_count", "issue_idx", "grouping"
             ]
         )
         df_issues["step_number"] = df_issues["step_number"].astype(int)
@@ -47,7 +48,7 @@ class Checks:
         module_logger.info("Initialising `Checks` object complete")
 
     def error_handling(self, file, subfile, issue_short_desc, issue_long_desc,
-                       column, issue_count, issue_idx):
+                       column, issue_count, issue_idx, category=np.nan):
         """
         If an error is handled, as they all should be, we need to specify what
         happens with the error. By putting it into a single function it will
@@ -59,7 +60,7 @@ class Checks:
         df = self.df_issues.copy()
         list_vals = [
             self.__key_1, self.__key_2, self.__key_3, file, subfile,
-            self.__step_no, issue_short_desc, issue_long_desc, column,
+            self.__step_no, category, issue_short_desc, issue_long_desc, column,
             issue_count, issue_idx, self.__grouping
         ]
         try:
@@ -79,6 +80,11 @@ class Checks:
                 var_msg = ''
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
+            if len(columns) == 0:
+                var_msg = ('The `columns` argument is empty, it needs to be '
+                           'at least length 1, this can be a null')
+                module_logger.error(var_msg)
+                raise ValueError()
             self.__checks_defaults['columns'] = columns
         if check_condition is not None:
             self.__set_defaults_check(check_condition, 'check_condition')
@@ -194,29 +200,29 @@ class Checks:
             self.__checks_defaults['idx_flag'] if
             "idx_flag" not in dict_check_info else
             dict_check_info['idx_flag'])
+        var_category = (
+            self.__checks_defaults['category'] if
+            "category" not in dict_check_info else
+            dict_check_info['category'])
         # TODO can we default to [np.nan] and remove the if? Make the if
-        #  just a check?
-        if len(list_columns) > 0:
-            for col in list_columns:
-                self.__evaluate_check(
-                    check_key, df, col, func_calc_condition,
-                    func_check_condition, func_count_condition,
-                    func_index_position, func_relevant_columns,
-                    func_long_description, var_idx_flag, **kwargs)
-        else:
-            col = np.nan
+        #  just a check for the length being > 0?
+        if len(list_columns) == 0:
+            var_msg = ''
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
+        for col in list_columns:
             self.__evaluate_check(
-                check_key, df, col, func_calc_condition, func_check_condition,
-                func_count_condition, func_index_position,
-                func_relevant_columns, func_long_description, var_idx_flag,
-                **kwargs)
+                check_key, df, col, func_calc_condition,
+                func_check_condition, func_count_condition,
+                func_index_position, func_relevant_columns,
+                func_long_description, var_idx_flag, var_category, **kwargs)
 
         module_logger.info(f"Completed check `{check_key}`")
 
     def __evaluate_check(
             self, check_key, df, col, func_calc_condition, func_check_condition,
             func_count_condition, func_index_position, func_relevant_columns,
-            func_long_description, var_idx_flag, **kwargs):
+            func_long_description, var_idx_flag, var_category, **kwargs):
         module_logger.info(
             f"Starting evaluating check `{check_key}` for column {col}")
         s_calc_condition = func_calc_condition(df, col, **kwargs)
@@ -258,6 +264,10 @@ class Checks:
                 f"The variable `s_index_conditions` is not a Series! It is a "
                 f"{type(s_index_conditions).__name__}")
             module_logger.error(var_msg)
+        if type(var_category).__name__ != 'str':
+            var_msg = (f'The variable `category` is not a string! It is a '
+                       f'{type(var_category).__name__}')
+            module_logger.error(var_msg)
         if var_check_condition:
             self.error_handling(
                 np.nan, np.nan, check_key, var_long_description,
@@ -268,7 +278,8 @@ class Checks:
                         s_index_conditions.loc[
                             s_index_conditions].index.tolist()
                     ]
-                )
+                ),
+                var_category
             )
         module_logger.info(
             f"Completed evaluating check `{check_key}` for column {col}")

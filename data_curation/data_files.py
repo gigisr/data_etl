@@ -43,8 +43,8 @@ class DataCuration:
         df_issues = pd.DataFrame(
             columns=[
                 "key_1", "key_2", "key_3", "file", "sub_file", "step_number",
-                "issue_short_desc", "issue_long_desc", "column", "issue_count",
-                "issue_idx", "grouping"
+                "category", "issue_short_desc", "issue_long_desc", "column",
+                "issue_count", "issue_idx", "grouping"
             ]
         )
         df_issues["step_number"] = df_issues["step_number"].astype(int)
@@ -52,7 +52,7 @@ class DataCuration:
         module_logger.info("Initialising `DataCuration` object complete")
 
     def error_handling(self, file, subfile, issue_short_desc, issue_long_desc,
-                       column, issue_count, issue_idx):
+                       column, issue_count, issue_idx, category=np.nan):
         """
         If an error is handled, as they all should be, we need to specify what
         happens with the error. By putting it into a single function it will
@@ -62,7 +62,7 @@ class DataCuration:
         df = self.df_issues.copy()
         list_vals = [
             self.__key_1, self.__key_2, self.__key_3, file, subfile,
-            self.__step_no, issue_short_desc, issue_long_desc, column,
+            self.__step_no, category, issue_short_desc, issue_long_desc, column,
             issue_count, issue_idx, self.__grouping
         ]
         try:
@@ -635,8 +635,8 @@ class DataCuration:
                                 "",
                                 var_msg,
                                 var_col_name,
-                                pd.np.nan,
-                                pd.np.nan
+                                np.nan,
+                                np.nan
                             )
                             continue
                         try:
@@ -662,14 +662,30 @@ class DataCuration:
                                 f"For type new_col the function for alter_key "
                                 f"{alter_key} has not worked")
                             module_logger.error(var_msg)
+
+                            var_idx = np.nan
+                            var_issue_count = np.nan
+                            if "idx_function" in dict_alter[alter_key]:
+                                func_idx = dict_alter[alter_key]['idx_function']
+                                if type(func_idx).__name__ != 'function':
+                                    var_msg = ''
+                                    module_logger.error(var_msg)
+                                s_idx = func_idx(df, keys, **kwargs)
+                                var_idx = ', '.join(
+                                    [
+                                        str(item) for item in
+                                        s_idx.loc[s_idx].index.tolist()
+                                    ]
+                                )
+                                var_issue_count = s_idx.sum()
                             self.error_handling(
                                 tbl_key.split(self.__key_separator)[0],
                                 tbl_key.split(self.__key_separator)[1],
                                 "",
                                 var_msg,
                                 var_col_name,
-                                pd.np.nan,
-                                pd.np.nan
+                                var_issue_count,
+                                var_idx
                             )
                             continue
                 elif var_tbl_type == "DataFrame":
@@ -684,8 +700,8 @@ class DataCuration:
                             "",
                             var_msg,
                             var_col_name,
-                            pd.np.nan,
-                            pd.np.nan
+                            np.nan,
+                            np.nan
                         )
                         continue
                     try:
@@ -702,22 +718,38 @@ class DataCuration:
                             "",
                             var_msg,
                             var_col_name,
-                            pd.np.nan,
-                            pd.np.nan
+                            np.nan,
+                            np.nan
                         )
                         continue
                     except:
                         var_msg = (f"For type new_col the function for "
                                    f"alter_key {alter_key} has not worked")
                         module_logger.error(var_msg)
+
+                        var_idx = np.nan
+                        var_issue_count = np.nan
+                        if "idx_function" in dict_alter[alter_key]:
+                            func_idx = dict_alter[alter_key]['idx_function']
+                            if type(func_idx).__name__ != 'function':
+                                var_msg = ''
+                                module_logger.error(var_msg)
+                            s_idx = func_idx(df, keys, **kwargs)
+                            var_idx = ', '.join(
+                                [
+                                    str(item) for item in
+                                    s_idx.loc[s_idx].index.tolist()
+                                ]
+                            )
+                            var_issue_count = s_idx.sum()
                         self.error_handling(
                             np.nan,
                             np.nan,
                             "",
                             var_msg,
                             var_col_name,
-                            pd.np.nan,
-                            pd.np.nan
+                            var_issue_count,
+                            var_idx
                         )
                         continue
             elif var_type == "map_df":
@@ -730,14 +762,30 @@ class DataCuration:
                             var_msg = (f"For type map_df the function for "
                                        f"alter_key {alter_key} has not worked")
                             module_logger.error(var_msg)
+
+                            var_idx = np.nan
+                            var_issue_count = np.nan
+                            if "idx_function" in dict_alter[alter_key]:
+                                func_idx = dict_alter[alter_key]['idx_function']
+                                if type(func_idx).__name__ != 'function':
+                                    var_msg = ''
+                                    module_logger.error(var_msg)
+                                s_idx = func_idx(dfs[tbl_key], keys, **kwargs)
+                                var_idx = ', '.join(
+                                    [
+                                        str(item) for item in
+                                        s_idx.loc[s_idx].index.tolist()
+                                    ]
+                                )
+                                var_issue_count = s_idx.sum()
                             self.error_handling(
                                 tbl_key.split(self.__key_separator)[0],
                                 tbl_key.split(self.__key_separator)[1],
                                 "",
                                 var_msg,
-                                "",
-                                pd.np.nan,
-                                pd.np.nan
+                                np.nan,
+                                var_issue_count,
+                                var_idx
                             )
                             continue
                 elif var_tbl_type == "DataFrame":
@@ -748,14 +796,30 @@ class DataCuration:
                         var_msg = (f"For type map_df the function for "
                                    f"alter_key {alter_key} has not worked")
                         module_logger.error(var_msg)
+
+                        var_idx = np.nan
+                        var_issue_count = np.nan
+                        if "idx_function" in dict_alter[alter_key]:
+                            func_idx = dict_alter[alter_key]['idx_function']
+                            if type(func_idx).__name__ != 'function':
+                                var_msg = ''
+                                module_logger.error(var_msg)
+                            s_idx = func_idx(dfs, keys, **kwargs)
+                            var_idx = ', '.join(
+                                [
+                                    str(item) for item in
+                                    s_idx.loc[s_idx].index.tolist()
+                                ]
+                            )
+                            var_issue_count = s_idx.sum()
                         self.error_handling(
                             np.nan,
                             np.nan,
                             "",
                             var_msg,
-                            "",
-                            pd.np.nan,
-                            pd.np.nan
+                            np.nan,
+                            var_issue_count,
+                            var_idx
                         )
                         continue
 
@@ -820,19 +884,11 @@ class DataCuration:
                 if dtype_flag == 1:
                     continue
                 converted_flag = 0
-                for i in range(1, len([x for x in dict_functions.keys()]) + 1):
-                    try:
-                        func_use = dict_functions[i]
-                    except:
-                        var_msg = (
-                            f"The functions should be keyed in integers from 1 "
-                            f"to number of keys, this happened in convert_key "
-                            f"{convert_key} and function key {i}")
-                        module_logger.error(var_msg)
-                        raise ValueError(var_msg)
+                for key in dict_functions.keys():
+                    func_use = dict_functions[key]
                     if type(func_use).__name__ != "function":
                         var_msg = (f"The function for converting is not a "
-                                   f"function! For keys {convert_key}, {i}")
+                                   f"function! For keys {convert_key}, {key}")
                         module_logger.error(var_msg)
                         raise ValueError(var_msg)
                     try:
@@ -842,10 +898,28 @@ class DataCuration:
                         break
                     except:
                         var_msg = (f"The conversion failed for keys "
-                                   f"{convert_key}, {i}, trying next")
+                                   f"{convert_key}, {key}, trying next")
                         module_logger.warning(var_msg)
                         continue
                 if converted_flag == 0:
+                    var_idx = np.nan
+                    var_issue_count = np.nan
+                    if "idx_function" in dict_convert[convert_key]:
+                        func_idx = dict_convert[convert_key]['idx_function']
+                        if type(func_idx).__name__ != 'function':
+                            var_msg = (
+                                f'The `idx_function` argument is not a function'
+                                f' it is a {type(func_idx).__name__}')
+                            module_logger.error(var_msg)
+                            raise ValueError(var_msg)
+                        s_idx = func_idx(df, col, **kwargs)
+                        var_idx = ', '.join(
+                            [
+                                str(item) for item in
+                                s_idx.loc[s_idx].index.tolist()
+                            ]
+                        )
+                        var_issue_count = s_idx.sum()
                     var_msg = (f"The conversion for column {col} for "
                                f"convert_key {convert_key} failed.")
                     module_logger.error(var_msg)
@@ -855,8 +929,8 @@ class DataCuration:
                         "",
                         f"The conversion failed to format {convert_key}",
                         col,
-                        pd.np.nan,
-                        pd.np.nan
+                        var_issue_count,
+                        var_idx
                     )
 
         module_logger.info("Completed `__convert_col`")
