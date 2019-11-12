@@ -2,6 +2,7 @@
 import logging
 import importlib
 import os
+from inspect import getfullargspec
 
 import pandas as pd
 import numpy as np
@@ -16,6 +17,15 @@ class Checks:
     __key_3 = None
     __grouping = None
     df_issues = None
+    __checks_defaults = {
+        'columns': list(),
+        'check_condition':
+            lambda df, col, condition, **kwargs: condition.sum() > 0,
+        'count_condition': lambda df, col, condition, **kwargs: condition.sum(),
+        'index_position': lambda df, col, condition, **kwargs: condition,
+        'relevant_columns': lambda df, col, condition, **kwargs: col,
+        'idx_flag': True
+    }
 
     def __init__(self, grouping, key_1, key_2=None, key_3=None):
         module_logger.info("Initialising `Checks` object")
@@ -60,6 +70,53 @@ class Checks:
                 f"Logging the issue failed, values: {list_vals}")
             raise ValueError("Logging an issue has failed, can not continue")
         module_logger.info(f"Error logged: {list_vals}")
+
+    def set_defaults(
+            self, columns=None, check_condition=None, count_condition=None,
+            index_position=None, relevant_columns=None, idx_flag=None):
+        if columns is not None:
+            if type(columns).__name__ != 'list':
+                var_msg = ''
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+            self.__checks_defaults['columns'] = columns
+        if check_condition is not None:
+            self.__set_defaults_check(check_condition, 'check_condition')
+            self.__checks_defaults['check_condition'] = check_condition
+        if count_condition is not None:
+            self.__set_defaults_check(count_condition, 'count_condition')
+            self.__checks_defaults['count_condition'] = count_condition
+        if index_position is not None:
+            self.__set_defaults_check(index_position, 'index_position')
+            self.__checks_defaults['index_position'] = index_position
+        if relevant_columns is not None:
+            self.__set_defaults_check(relevant_columns, 'relevant_columns')
+            self.__checks_defaults['relevant_columns'] = relevant_columns
+        if idx_flag is not None:
+            if idx_flag not in [True, False]:
+                var_msg = 'The value of `idx_flag` need to be True or False'
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+            self.__checks_defaults['idx_flag'] = idx_flag
+
+    @staticmethod
+    def __set_defaults_check(function, label):
+        if type(function).__name__ != 'function':
+            var_msg = f'The passed value for `{label}` is not a function'
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
+        arg_spec = getfullargspec(function)
+        if arg_spec.args != ['df', 'col', 'condition']:
+            var_msg = (
+                f'The arguments passed in for the function `{label}` does not '
+                f'match with the required args: df, col, condition')
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
+        if arg_spec.varkw != 'kwargs':
+            var_msg = (f'The **kwargs argument has not been provided for '
+                       f'`{label}` and is required')
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
 
     def apply_checks(
             self, tables, script_name=None, path=None,
@@ -114,43 +171,52 @@ class Checks:
         func_calc_condition = dict_check_info["calc_condition"]
         func_long_description = dict_check_info["long_description"]
         func_check_condition = (
-            lambda df, col, condition, **kwargs: condition.sum() > 0 if
-            dict_check_info.get("check_condition") is None else
+            self.__checks_defaults['check_condition'] if
+            "check_condition" not in dict_check_info else
             dict_check_info["check_condition"])
-        list_columns = ([] if dict_check_info.get("columns") is None else
-                        dict_check_info["columns"])
+        list_columns = (
+            self.__checks_defaults['columns'] if
+            "columns" not in dict_check_info else
+            dict_check_info["columns"])
         func_count_condition = (
-            lambda df, col, condition, **kwargs: condition.sum() if
-            dict_check_info.get("count_condition") is None else
+            self.__checks_defaults['count_condition'] if
+            "count_condition" not in dict_check_info else
             dict_check_info["count_condition"])
         func_index_position = (
-            lambda df, col, condition, **kwargs: condition if
-            dict_check_info.get("index_position") is None else
+            self.__checks_defaults['index_position'] if
+            "index_position" not in dict_check_info else
             dict_check_info["index_position"])
         func_relevant_columns = (
-            lambda df, col, condition, **kwargs: col if
-            dict_check_info.get("relevant_columns") is None else
+            self.__checks_defaults['relevant_columns'] if
+            "relevant_columns" not in dict_check_info else
             dict_check_info["relevant_columns"])
+        var_idx_flag = (
+            self.__checks_defaults['idx_flag'] if
+            "idx_flag" not in dict_check_info else
+            dict_check_info['idx_flag'])
+        # TODO can we default to [np.nan] and remove the if? Make the if
+        #  just a check?
         if len(list_columns) > 0:
             for col in list_columns:
                 self.__evaluate_check(
                     check_key, df, col, func_calc_condition,
                     func_check_condition, func_count_condition,
                     func_index_position, func_relevant_columns,
-                    func_long_description, **kwargs)
+                    func_long_description, var_idx_flag, **kwargs)
         else:
             col = np.nan
             self.__evaluate_check(
                 check_key, df, col, func_calc_condition, func_check_condition,
                 func_count_condition, func_index_position,
-                func_relevant_columns, func_long_description, **kwargs)
+                func_relevant_columns, func_long_description, var_idx_flag,
+                **kwargs)
 
         module_logger.info(f"Completed check `{check_key}`")
 
     def __evaluate_check(
             self, check_key, df, col, func_calc_condition, func_check_condition,
             func_count_condition, func_index_position, func_relevant_columns,
-            func_long_description, **kwargs):
+            func_long_description, var_idx_flag, **kwargs):
         module_logger.info(
             f"Starting evaluating check `{check_key}` for column {col}")
         s_calc_condition = func_calc_condition(df, col, **kwargs)
@@ -160,6 +226,9 @@ class Checks:
             df, col, s_calc_condition, **kwargs)
         s_index_conditions = func_index_position(
             df, col, s_calc_condition, **kwargs)
+        if var_idx_flag is False:
+            s_index_conditions = s_index_conditions.map(
+                {True: False, False: True})
         var_relevant_columns = func_relevant_columns(
             df, col, s_calc_condition, **kwargs)
         var_long_description = func_long_description(

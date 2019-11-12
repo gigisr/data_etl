@@ -8,9 +8,7 @@ dict_checks["This check is for numbers being greater than 6"] = {
 }
 
 dict_checks["This check is for the `string` column to be not null"] = {
-    "columns": [],
     "calc_condition": lambda df, col, **kwargs: df['string'].isnull(),
-    'check_condition': lambda df, col, condition, **kwargs: condition.sum() > 0,
     "long_description": lambda df, col, condition, **kwargs:
         "The column `string` should not be null"
 }
