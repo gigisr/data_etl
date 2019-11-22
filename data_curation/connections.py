@@ -8,7 +8,7 @@ import configparser
 import pandas as pd
 import pyodbc
 
-from general_functions import func_to_sql
+from .general_functions import func_to_sql
 
 module_logger = logging.getLogger(__name__)
 # TODO account for tables not existing and existing when writing to the cnx,

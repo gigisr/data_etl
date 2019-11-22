@@ -17,6 +17,7 @@ class Checks:
     __key_3 = None
     __grouping = None
     df_issues = None
+    __key_separator = " -:- "
     __checks_defaults = {
         'columns': [np.nan],
         'check_condition':
@@ -24,6 +25,7 @@ class Checks:
         'count_condition': lambda df, col, condition, **kwargs: condition.sum(),
         'index_position': lambda df, col, condition, **kwargs: condition,
         'relevant_columns': lambda df, col, condition, **kwargs: col,
+        'long_description': lambda df, col, condition, **kwargs: "",
         'idx_flag': True,
         'category': np.nan
     }
@@ -74,7 +76,8 @@ class Checks:
 
     def set_defaults(
             self, columns=None, check_condition=None, count_condition=None,
-            index_position=None, relevant_columns=None, idx_flag=None):
+            index_position=None, relevant_columns=None, long_description=None,
+            idx_flag=None):
         if columns is not None:
             if type(columns).__name__ != 'list':
                 var_msg = ''
@@ -98,6 +101,9 @@ class Checks:
         if relevant_columns is not None:
             self.__set_defaults_check(relevant_columns, 'relevant_columns')
             self.__checks_defaults['relevant_columns'] = relevant_columns
+        if long_description is not None:
+            self.__set_defaults_check(long_description, 'long_descriptions')
+            self.__checks_defaults['long_description'] = long_description
         if idx_flag is not None:
             if idx_flag not in [True, False]:
                 var_msg = 'The value of `idx_flag` need to be True or False'
@@ -123,6 +129,18 @@ class Checks:
                        f'`{label}` and is required')
             module_logger.error(var_msg)
             raise ValueError(var_msg)
+
+    def set_key_separator(self, separator):
+        module_logger.info("Starting `set_key_separator`")
+        if (type(separator).__name__ != "str") | (len(separator) == 0):
+            var_msg = ("The argument `separator` for function "
+                       "`set_key_separator` should be a string of length "
+                       "greater than 0")
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
+        self.__key_separator = separator
+        module_logger.info(f"Completed `set_key_separator`, the key separator "
+                           f"is: {self.__key_separator}")
 
     def apply_checks(
             self, tables, script_name=None, path=None,
@@ -150,24 +168,21 @@ class Checks:
                 for check_key in dict_checks.keys():
                     self.__apply_the_check(
                         tables[table_key], dict_checks[check_key], check_key,
-                        **kwargs)
+                        table_key, **kwargs)
         elif type(tables).__name__ == "DataFrame":
             for check_key in dict_checks.keys():
                 self.__apply_the_check(tables, dict_checks[check_key],
-                                       check_key, **kwargs)
+                                       check_key, np.nan, **kwargs)
 
         module_logger.info("Completed `apply_checks`")
 
-    def __apply_the_check(self, df, dict_check_info, check_key, **kwargs):
+    def __apply_the_check(
+            self, df, dict_check_info, check_key, table_key, **kwargs):
         module_logger.info(f"Starting check `{check_key}`")
         var_required_keys = 0
         if "calc_condition" not in dict_check_info:
             var_required_keys += 1
             var_msg = "The check requires a value for key `calc_condition`"
-            module_logger.error(var_msg)
-        if "long_description" not in dict_check_info:
-            var_required_keys += 1
-            var_msg = "The check requires a value for key `long_description`"
             module_logger.error(var_msg)
         if var_required_keys > 0:
             var_msg = (f"Not all the required keys are present for the "
@@ -175,7 +190,10 @@ class Checks:
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
         func_calc_condition = dict_check_info["calc_condition"]
-        func_long_description = dict_check_info["long_description"]
+        func_long_description = (
+            self.__checks_defaults['long_description'] if
+            "long_description" not in dict_check_info else
+            dict_check_info["long_description"])
         func_check_condition = (
             self.__checks_defaults['check_condition'] if
             "check_condition" not in dict_check_info else
@@ -213,16 +231,17 @@ class Checks:
         for col in list_columns:
             self.__evaluate_check(
                 check_key, df, col, func_calc_condition,
-                func_check_condition, func_count_condition,
-                func_index_position, func_relevant_columns,
-                func_long_description, var_idx_flag, var_category, **kwargs)
+                func_check_condition, func_count_condition, func_index_position,
+                func_relevant_columns, func_long_description, var_idx_flag,
+                var_category, table_key, **kwargs)
 
         module_logger.info(f"Completed check `{check_key}`")
 
     def __evaluate_check(
             self, check_key, df, col, func_calc_condition, func_check_condition,
             func_count_condition, func_index_position, func_relevant_columns,
-            func_long_description, var_idx_flag, var_category, **kwargs):
+            func_long_description, var_idx_flag, var_category, table_key,
+            **kwargs):
         module_logger.info(
             f"Starting evaluating check `{check_key}` for column {col}")
         s_calc_condition = func_calc_condition(df, col, **kwargs)
@@ -269,8 +288,15 @@ class Checks:
                        f'{type(var_category).__name__}')
             module_logger.error(var_msg)
         if var_check_condition:
+            if pd.isnull(table_key):
+                var_file = np.nan
+                var_subfile = np.nan
+            else:
+                var_file = table_key.split(self.__key_separator)[0]
+                var_subfile = (table_key.split(self.__key_separator)[1] if
+                               self.__key_separator in table_key else np.nan)
             self.error_handling(
-                np.nan, np.nan, check_key, var_long_description,
+                var_file, var_subfile, check_key, var_long_description,
                 var_relevant_columns, var_count_condition,
                 ", ".join(
                     [

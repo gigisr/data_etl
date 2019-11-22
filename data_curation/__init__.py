@@ -9,3 +9,4 @@ __all__ = [
     DataCuration, Checks, Connections, Reporting, func_check_for_issues,
     func_initialise_logging
 ]
+__version__ = '0.1dev'

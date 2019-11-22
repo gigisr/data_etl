@@ -124,6 +124,13 @@ class DataCuration:
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
             list_files = [list_files]
+        elif var_type == 'list':
+            if len(list_files) == 0:
+                var_msg = ("The length of the `list_files` argument is 0, it "
+                           "needs to be a valid value.")
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+            list_files = list_files
         else:
             var_msg = (f"Unhandled type for function `set_file_list`: "
                        f"{var_type}")
@@ -593,18 +600,18 @@ class DataCuration:
 
         if type(self.tables).__name__ == "DataFrame":
             df = self.tables.copy()
-            self.__alter_cols(
+            df_new = self.__alter_cols(
                 df, dict_alter, [self.__key_1, self.__key_2, self.__key_3],
-                **kwargs
-            )
+                np.nan, **kwargs)
+            self.set_table(df_new)
         elif type(self.tables).__name__ == "dict":
             dfs = self.tables
             for key in self.tables.keys():
                 df = dfs[key].copy()
-                self.__alter_cols(
+                df_new = self.__alter_cols(
                     df, dict_alter, [self.__key_1, self.__key_2, self.__key_3],
-                    **kwargs
-                )
+                    key, **kwargs)
+                self.set_table(df_new, key)
         else:
             var_msg = ("The tables are in neither a DataFrame or dictionary "
                        "format, which means something is seriously wrong...")
@@ -613,217 +620,91 @@ class DataCuration:
 
         module_logger.info("Completed `alter_tables`")
 
-    def __alter_cols(self, df, dict_alter, keys, **kwargs):
+    def __alter_cols(self, df, dict_alter, keys, dict_key, **kwargs):
         module_logger.info("Starting `__alter_cols`")
-        var_tbl_type = type(self.tables).__name__
-        dfs = self.tables
+        if pd.isnull(dict_key):
+            var_file = np.nan
+            var_subfile = np.nan
+        else:
+            var_file = dict_key.split(self.__key_separator)[0]
+            var_subfile = (dict_key.split(self.__key_separator)[1] if
+                           self.__key_separator in dict_key else np.nan)
         for alter_key in dict_alter.keys():
             var_type = dict_alter[alter_key]["type"]
             function = dict_alter[alter_key]["function"]
             if var_type == "new_col":
                 var_col_name = dict_alter[alter_key]["col_name"]
-                if var_tbl_type == "dict":
-                    for tbl_key in [x for x in self.tables.keys()]:
-                        if var_col_name in dfs[tbl_key].columns.tolist():
-                            var_msg = (
-                                f"The column {var_col_name} is present in the "
-                                f"table so should not be overwritten")
-                            module_logger.error(var_msg)
-                            self.error_handling(
-                                tbl_key.split(self.__key_separator)[0],
-                                tbl_key.split(self.__key_separator)[1],
-                                "",
-                                var_msg,
-                                var_col_name,
-                                np.nan,
-                                np.nan
-                            )
-                            continue
-                        try:
-                            s = function(df, keys, **kwargs)
-                            dfs[tbl_key][var_col_name] = s
-                        except KeyError:
-                            var_msg = (
-                                f"For type new_col the function for alter_key "
-                                f"{alter_key} has not worked with a KeyError")
-                            module_logger.error(var_msg)
-                            self.error_handling(
-                                tbl_key.split(self.__key_separator)[0],
-                                tbl_key.split(self.__key_separator)[1],
-                                "",
-                                var_msg,
-                                var_col_name,
-                                pd.np.nan,
-                                pd.np.nan
-                            )
-                            continue
-                        except:
-                            var_msg = (
-                                f"For type new_col the function for alter_key "
-                                f"{alter_key} has not worked")
-                            module_logger.error(var_msg)
+                if var_col_name in df.columns.tolist():
+                    var_msg = (
+                        f"The column {var_col_name} is present in the "
+                        f"table so should not be overwritten")
+                    module_logger.error(var_msg)
+                    self.error_handling(var_file, var_subfile, "", var_msg,
+                                        var_col_name, np.nan, np.nan)
+                    continue
+                try:
+                    s = function(df, keys, **kwargs)
+                    df[var_col_name] = s
+                except KeyError:
+                    var_msg = (
+                        f"For type new_col the function for alter_key "
+                        f"{alter_key} has not worked with a KeyError")
+                    module_logger.error(var_msg)
+                    self.error_handling(var_file, var_subfile, "", var_msg,
+                                        var_col_name, np.nan, np.nan)
+                    continue
+                except:
+                    var_msg = (f"For type new_col the function for "
+                               f"alter_key {alter_key} has not worked")
+                    module_logger.error(var_msg)
 
-                            var_idx = np.nan
-                            var_issue_count = np.nan
-                            if "idx_function" in dict_alter[alter_key]:
-                                func_idx = dict_alter[alter_key]['idx_function']
-                                if type(func_idx).__name__ != 'function':
-                                    var_msg = ''
-                                    module_logger.error(var_msg)
-                                s_idx = func_idx(df, keys, **kwargs)
-                                var_idx = ', '.join(
-                                    [
-                                        str(item) for item in
-                                        s_idx.loc[s_idx].index.tolist()
-                                    ]
-                                )
-                                var_issue_count = s_idx.sum()
-                            self.error_handling(
-                                tbl_key.split(self.__key_separator)[0],
-                                tbl_key.split(self.__key_separator)[1],
-                                "",
-                                var_msg,
-                                var_col_name,
-                                var_issue_count,
-                                var_idx
-                            )
-                            continue
-                elif var_tbl_type == "DataFrame":
-                    if var_col_name in dfs.columns.tolist():
-                        var_msg = (
-                            f"The column {var_col_name} is present in the "
-                            f"table so should not be overwritten")
-                        module_logger.error(var_msg)
-                        self.error_handling(
-                            np.nan,
-                            np.nan,
-                            "",
-                            var_msg,
-                            var_col_name,
-                            np.nan,
-                            np.nan
+                    var_idx = np.nan
+                    var_issue_count = np.nan
+                    if "idx_function" in dict_alter[alter_key]:
+                        func_idx = dict_alter[alter_key]['idx_function']
+                        if type(func_idx).__name__ != 'function':
+                            var_msg = ''
+                            module_logger.error(var_msg)
+                        s_idx = func_idx(df, keys, **kwargs)
+                        var_idx = ', '.join(
+                            [
+                                str(item) for item in
+                                s_idx.loc[s_idx].index.tolist()
+                            ]
                         )
-                        continue
-                    try:
-                        s = function(df, keys, **kwargs)
-                        dfs[var_col_name] = s
-                    except KeyError as e:
-                        var_msg = (
-                            f"For type new_col the function for alter_key "
-                            f"{alter_key} has not worked with a KeyError")
-                        module_logger.error(var_msg)
-                        self.error_handling(
-                            np.nan,
-                            np.nan,
-                            "",
-                            var_msg,
-                            var_col_name,
-                            np.nan,
-                            np.nan
-                        )
-                        continue
-                    except:
-                        var_msg = (f"For type new_col the function for "
-                                   f"alter_key {alter_key} has not worked")
-                        module_logger.error(var_msg)
-
-                        var_idx = np.nan
-                        var_issue_count = np.nan
-                        if "idx_function" in dict_alter[alter_key]:
-                            func_idx = dict_alter[alter_key]['idx_function']
-                            if type(func_idx).__name__ != 'function':
-                                var_msg = ''
-                                module_logger.error(var_msg)
-                            s_idx = func_idx(df, keys, **kwargs)
-                            var_idx = ', '.join(
-                                [
-                                    str(item) for item in
-                                    s_idx.loc[s_idx].index.tolist()
-                                ]
-                            )
-                            var_issue_count = s_idx.sum()
-                        self.error_handling(
-                            np.nan,
-                            np.nan,
-                            "",
-                            var_msg,
-                            var_col_name,
-                            var_issue_count,
-                            var_idx
-                        )
-                        continue
+                        var_issue_count = s_idx.sum()
+                    self.error_handling(var_file, var_subfile, "", var_msg,
+                                        var_col_name, var_issue_count, var_idx)
+                    continue
             elif var_type == "map_df":
-                if var_tbl_type == "dict":
-                    for tbl_key in [x for x in self.tables.keys()]:
-                        try:
-                            df = function(dfs[tbl_key], keys, **kwargs)
-                            dfs[tbl_key] = df.copy()
-                        except:
-                            var_msg = (f"For type map_df the function for "
-                                       f"alter_key {alter_key} has not worked")
+                try:
+                    df = function(df, keys, **kwargs)
+                except:
+                    var_msg = (f"For type map_df the function for "
+                               f"alter_key {alter_key} has not worked")
+                    module_logger.error(var_msg)
+
+                    var_idx = np.nan
+                    var_issue_count = np.nan
+                    if "idx_function" in dict_alter[alter_key]:
+                        func_idx = dict_alter[alter_key]['idx_function']
+                        if type(func_idx).__name__ != 'function':
+                            var_msg = ''
                             module_logger.error(var_msg)
-
-                            var_idx = np.nan
-                            var_issue_count = np.nan
-                            if "idx_function" in dict_alter[alter_key]:
-                                func_idx = dict_alter[alter_key]['idx_function']
-                                if type(func_idx).__name__ != 'function':
-                                    var_msg = ''
-                                    module_logger.error(var_msg)
-                                s_idx = func_idx(dfs[tbl_key], keys, **kwargs)
-                                var_idx = ', '.join(
-                                    [
-                                        str(item) for item in
-                                        s_idx.loc[s_idx].index.tolist()
-                                    ]
-                                )
-                                var_issue_count = s_idx.sum()
-                            self.error_handling(
-                                tbl_key.split(self.__key_separator)[0],
-                                tbl_key.split(self.__key_separator)[1],
-                                "",
-                                var_msg,
-                                np.nan,
-                                var_issue_count,
-                                var_idx
-                            )
-                            continue
-                elif var_tbl_type == "DataFrame":
-                    try:
-                        df = function(df, keys, **kwargs)
-                        dfs = df.copy()
-                    except:
-                        var_msg = (f"For type map_df the function for "
-                                   f"alter_key {alter_key} has not worked")
-                        module_logger.error(var_msg)
-
-                        var_idx = np.nan
-                        var_issue_count = np.nan
-                        if "idx_function" in dict_alter[alter_key]:
-                            func_idx = dict_alter[alter_key]['idx_function']
-                            if type(func_idx).__name__ != 'function':
-                                var_msg = ''
-                                module_logger.error(var_msg)
-                            s_idx = func_idx(dfs, keys, **kwargs)
-                            var_idx = ', '.join(
-                                [
-                                    str(item) for item in
-                                    s_idx.loc[s_idx].index.tolist()
-                                ]
-                            )
-                            var_issue_count = s_idx.sum()
-                        self.error_handling(
-                            np.nan,
-                            np.nan,
-                            "",
-                            var_msg,
-                            np.nan,
-                            var_issue_count,
-                            var_idx
+                        s_idx = func_idx(df, keys, **kwargs)
+                        var_idx = ', '.join(
+                            [
+                                str(item) for item in
+                                s_idx.loc[s_idx].index.tolist()
+                            ]
                         )
-                        continue
+                        var_issue_count = s_idx.sum()
+                    self.error_handling(var_file, var_subfile, "", var_msg,
+                                        np.nan, var_issue_count, var_idx)
+                    continue
 
         module_logger.info("Completed `__alter_cols`")
+        return df
 
     def convert_columns(self, script_name=None, path=None,
                         object_name="dict_convert", dictionary=None, **kwargs):
@@ -925,7 +806,8 @@ class DataCuration:
                     module_logger.error(var_msg)
                     self.error_handling(
                         dict_key.split(self.__key_separator)[0],
-                        dict_key.split(self.__key_separator)[1],
+                        (dict_key.split(self.__key_separator)[1] if
+                         self.__key_separator in dict_key else np.nan),
                         "",
                         f"The conversion failed to format {convert_key}",
                         col,
