@@ -15,8 +15,8 @@ if __name__ == "__main__":
 
     var_checks_1_pass = True
 
-    func_initialise_logging('pipeline_test_1', '../logs/', var_key_1, var_key_2,
-                            var_key_3, var_start_time)
+    func_initialise_logging('pipeline_test_1', '../../logs/', var_key_1,
+                            var_key_2, var_key_3, var_start_time)
 
     # Initialise objects required
     cnxs = Connections()
@@ -27,12 +27,12 @@ if __name__ == "__main__":
     # Set up connections
     cnxs.add_cnx(
         cnx_key='df_issues', cnx_type='sqlite3', table_name='df_issues',
-        file_path='../data/processed/pipeline.db')
+        file_path='../../data/processed/pipeline.db')
 
     # Data curation testing
 
     # Read the files in
-    data.find_files("../data/input/test_scripts_1", "test_reading_in")
+    data.find_files("../../data/input/test_scripts_1", "test_reading_in")
     data.reading_in(path=".", script_name="test_reading_in")
 
     # Set the step number
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     data.read_in_headers(
         path=".",
         script_name="test_reading_in",
-        filepath="../data/input/test_scripts_1/headers.xlsx")
+        filepath="../../data/input/test_scripts_1/headers.xlsx")
     data.link_headers(path=".", script_name="test_reading_in")
     data.assert_linked_headers()
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     # Temporary snapshot for testing
     pickle.dump(
         {'data': data, 'checks': check, 'report': reporting},
-        open("../pickles/dict_dc.pkl", "wb"))
+        open("../../pickles/dict_dc.pkl", "wb"))
 
     # Log issues found
     func_check_for_issues(data.get_issue_count(), cnxs, 'df_issues',
