@@ -883,6 +883,13 @@ class DataCuration:
 
     def form_summary_tables(self, function=None, path=None, script_name=None,
                             func_name="form_tables", **kwargs):
+        """
+        Use a function to create summaries off the main table set.
+
+        The function is passed the arguments:
+            self.tables, self.formed_tables, self.__grouping, self.__key_1,
+            self.__key_2, self.__key_3, self.__key_separator, **kwargs
+        """
         module_logger.info("Starting `form_summary_tables`")
 
         if function is not None:

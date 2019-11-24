@@ -148,18 +148,6 @@ class Reporting:
                     dict_use['function'], tables, var_file_path, var_file_name,
                     self.__grouping, self.__key_1, self.__key_2, self.__key_3,
                     **kwargs)
-            # elif var_report_type == 'chart':
-            #     if 'chart' not in dict_report[report_key]:
-            #         var_msg = 'The key `chart` is not present when it should be'
-            #         module_logger.error(var_msg)
-            #         raise AttributeError(var_msg)
-            #     self.__report_chart(dict_report[report_key], **kwargs)
-            # elif var_report_type == 'map':
-            #     if 'map' not in dict_report[report_key]:
-            #         var_msg = 'The key `map` is not present when it should be'
-            #         module_logger.error(var_msg)
-            #         raise AttributeError(var_msg)
-            #     self.__report_map(dict_report[report_key], **kwargs)
             else:
                 var_msg = (f'The passed type is not currently handled: '
                            f'`{var_report_type}`')
@@ -177,42 +165,6 @@ class Reporting:
         function(tables, file_path, file_name, grouping, key_1, key_2, key_3,
                  **kwargs)
         module_logger.info("Completed `__any_report`")
-
-    # def __report_chart(self, tables, dict_report, **kwargs):
-    #     module_logger.info("Starting `__report_chart`")
-    #     var_file_name = dict_report['file_name'](
-    #         tables, self.__file_path, self.__grouping, self.__key_1,
-    #         self.__key_2, self.__key_3, **kwargs)
-    #     if type(var_file_name).__name__ != 'str':
-    #         var_msg = (f'The type of `file_name` is not `str` it is '
-    #                    f'{type(var_file_name).__name__}')
-    #         module_logger.error(var_msg)
-    #         raise ValueError(var_msg)
-    #     if 'chart' in dict_report:
-    #         dict_report['chart'](
-    #             tables, self.__file_path, self.__grouping, self.__key_1,
-    #             self.__key_2, self.__key_3, var_file_name, **kwargs)
-    #     else:
-    #         var_msg = ('The combination of keys is not compatible with the '
-    #                    '`__report_chart` call')
-    #         module_logger.error(var_msg)
-    #         raise AttributeError(var_msg)
-    #     module_logger.info("Completed `__report_chart`")
-
-    # def __report_map(self, tables, dict_report, **kwargs):
-    #     module_logger.info("Starting `__report_map`")
-    #     var_file_name = dict_report['file_name'](
-    #         tables, self.__file_path, self.__grouping, self.__key_1,
-    #         self.__key_2, self.__key_3, **kwargs)
-    #     if type(var_file_name).__name__ != 'str':
-    #         var_msg = (f'The type of `file_name` is not `str` it is '
-    #                    f'{type(var_file_name).__name__}')
-    #         module_logger.error(var_msg)
-    #         raise ValueError(var_msg)
-    #     dict_report['map'](
-    #         tables, self.__file_path, self.__grouping, self.__key_1,
-    #         self.__key_2, self.__key_3, var_file_name, **kwargs)
-    #     module_logger.info("Completed `__report_map`")
 
     def get_issue_count(self, issue_number_min=None, issue_number_max=None):
         module_logger.info("Starting `get_issue_count`")
