@@ -19,7 +19,7 @@ class DataCuration:
     __key_3 = None
     __grouping = None
     tables = dict()
-    df_appended = None
+    formed_tables = dict()
     list_files = list()
     __key_separator = " -:- "
     __link_headers = dict()
@@ -69,9 +69,9 @@ class DataCuration:
             df.loc[df.shape[0]] = list_vals
             self.df_issues = df.copy()
         except:
-            module_logger.error(
-                f"Logging the issue failed, values: {list_vals}")
-            raise ValueError("Logging an issue has failed, can not continue")
+            var_msg = f"Logging the issue failed for values: {list_vals}"
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
         module_logger.info(f"Error logged: {list_vals}")
 
     def set_step_no(self, step_no):
@@ -207,7 +207,9 @@ class DataCuration:
                 raise ValueError(var_msg)
         elif (script_name is not None) & (path is not None):
             if not os.path.exists(os.path.join(path, f"{script_name}.py")):
-                raise ValueError("The script does not exist")
+                var_msg = f"The script does not exist: {script_name}.py"
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
             mod = importlib.import_module(script_name)
             function = getattr(mod, func_name)
         else:
@@ -326,16 +328,19 @@ class DataCuration:
             raise ValueError(var_msg)
         df = self.tables
         dict_dfs = dict()
+
         if key is not None:
             var_cycle = key
         else:
             var_cycle = "level_0"
         if var_cycle not in self.tables.columns.tolist():
-            raise ValueError(
-                f"There is no {var_cycle} column present in the table")
+            var_msg = f"There is no {var_cycle} column present in the table"
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
         for val in df[var_cycle].unique().tolist():
             dict_dfs[val] = df.loc[df[var_cycle] == val].copy()
         self.set_table(dict_dfs)
+
         module_logger.info("Completed `dictionary_tables`")
 
     def read_in_headers(self, function=None, path=None, script_name=None,
@@ -354,7 +359,9 @@ class DataCuration:
         elif (script_name is not None) & (path is not None):
             if not os.path.exists(
                     os.path.join(path, f"{script_name}.py")):
-                raise ValueError("The script does not exist")
+                var_msg = f"The script does not exist: {script_name}.py"
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
             mod = importlib.import_module(script_name)
             function = getattr(mod, func_name)
         else:
@@ -388,7 +395,6 @@ class DataCuration:
 
     def link_headers(self, function=None, path=None, script_name=None,
                      func_name="link_headers", **kwargs):
-        # TODO Make sure kwargs is included
         # TODO Need to see if we can isolate just a set of new tables? Maybe
         #  have a list of dictionary keys that have had their headers
         #  done already?
@@ -403,7 +409,9 @@ class DataCuration:
         elif (script_name is not None) & (path is not None):
             if not os.path.exists(
                     os.path.join(path, f"{script_name}.py")):
-                raise ValueError("The script does not exist")
+                var_msg = f"The script does not exist: {script_name}.py"
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
             mod = importlib.import_module(script_name)
             function = getattr(mod, func_name)
         else:
@@ -572,6 +580,7 @@ class DataCuration:
                        "for function `set_headers`")
             module_logger.error(var_msg)
             raise ValueError(var_msg)
+
         module_logger.info("Completed `set_headers`")
 
     def alter_tables(self, script_name=None, path=None,
@@ -583,7 +592,9 @@ class DataCuration:
         # TODO move this check to own function (applies to convert_columns too)
         if (script_name is not None) & (object_name is not None):
             if not os.path.exists(os.path.join(path, f"{script_name}.py")):
-                raise ValueError("The script does not exist")
+                var_msg = f"The script does not exist {script_name}.py"
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
             mod = importlib.import_module(script_name)
             dict_alter = getattr(mod, object_name)
         elif dictionary is not None:
@@ -711,12 +722,14 @@ class DataCuration:
         module_logger.info("Starting `convert_columns`")
         if (script_name is not None) & (object_name is not None):
             if not os.path.exists(os.path.join(path, f"{script_name}.py")):
-                raise ValueError("The script does not exist")
+                var_msg = f"The script does not exist {script_name}.py"
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
             mod = importlib.import_module(script_name)
             dict_convert = getattr(mod, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
-                var_msg = ""
+                var_msg = "The `dictionary` argument is not a dictionary"
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
             dict_convert = dictionary
@@ -818,21 +831,42 @@ class DataCuration:
         module_logger.info("Completed `__convert_col`")
         return df
 
-    def assert_nulls(self, list_nulls=None):
-        # TODO: have excluded columns from the nulls application
+    def assert_nulls(self, list_nulls=None, list_exclude_cols=None):
         module_logger.info("Starting `assert_nulls`")
         if list_nulls is None:
-            list_nulls = ["nan", ""]
-        module_logger.info(f"The nulls being used are: {list_nulls}")
+            list_nulls_use = ["nan", ""]
+        else:
+            list_nulls_use = list_nulls
+        if list_exclude_cols is None:
+            list_exclude_cols_use = []
+        else:
+            list_exclude_cols_use = list_exclude_cols
+        module_logger.info(f"The nulls being used are: {list_nulls_use}")
+        module_logger.info(
+            f"The columns being excluded are: {list_exclude_cols_use}")
         df = self.tables.copy()
         if type(df).__name__ == "dict":
             list_keys = [x for x in df.keys()]
             for key in list_keys:
-                for null in list_nulls:
-                    df[key] = df[key].replace(null, np.nan)
+                for null in list_nulls_use:
+                    if len(list_exclude_cols_use) == 0:
+                        df[key] = df[key].replace(null, np.nan)
+                    else:
+                        for col in [
+                            col for col in df[key].columns.tolist() if
+                            col not in list_exclude_cols_use
+                        ]:
+                            df[key][col] = df[key][col].replace(null, np.nan)
         else:
-            for null in list_nulls:
-                df = df.reaplce(null, np.nan)
+            for null in list_nulls_use:
+                if len(list_exclude_cols_use) == 0:
+                    df = df.replace(null, np.nan)
+                else:
+                    for col in [
+                        col for col in df.columns.tolist() if
+                        col not in list_exclude_cols_use
+                    ]:
+                        df[col] = df[col].replace(null, np.nan)
         self.set_table(df, overwrite=True)
         module_logger.info("Completed `assert_nulls`")
 
@@ -847,42 +881,42 @@ class DataCuration:
         module_logger.info("Completed `get_issue_count`")
         return var_count
 
-    def append_table(self, df_new):
-        module_logger.info("Starting `append_table`")
-        if type(self.tables).__name__ != "DataFrame":
-            var_msg = ("The `tables` attribute is not a DataFrame which it "
-                       "needs to be for this function `append_table`")
-            logging.error(var_msg)
-            raise TypeError(var_msg)
-        df = self.tables.copy()
-        list_cols_in_df = [
-            col for col in df.columns.tolist() if
-            col not in df_new.columns.tolist()
-        ]
-        if len(list_cols_in_df) > 0:
-            var_msg = (f"There are columns in `self.tables` that are not in "
-                       f"`df_new`: {list_cols_in_df}")
-            logging.error(var_msg)
+    def form_summary_tables(self, function=None, path=None, script_name=None,
+                            func_name="form_tables", **kwargs):
+        module_logger.info("Starting `form_summary_tables`")
+
+        if function is not None:
+            if type(function).__name__ != "function":
+                var_msg = ("The function passed to `self.read_in_headers` is "
+                           "not a function.")
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+        elif (script_name is not None) & (path is not None):
+            if not os.path.exists(
+                    os.path.join(path, f"{script_name}.py")):
+                var_msg = f"The script does not exist: {script_name}.py"
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+            mod = importlib.import_module(script_name)
+            function = getattr(mod, func_name)
+        else:
+            var_msg = ("One of the `function` or `script_name` arguments needs "
+                       "to be completed. And if `script name is then `path` "
+                       "needs to be too.")
+            module_logger.error(var_msg)
             raise ValueError(var_msg)
-        list_cols_in_df_new = [
-            col for col in df_new.columns.tolist() if
-            col not in df.columns.tolist()
-        ]
-        if len(list_cols_in_df_new) > 0:
-            var_msg = (f"There are columns in `df_new` that are not in "
-                       f"`self.tables`: {list_cols_in_df_new}")
-            logging.error(var_msg)
+
+        dict_formed_tables = function(
+            self.tables, self.__grouping, self.__key_1, self.__key_2,
+            self.__key_3, self.__key_separator, **kwargs)
+        if type(dict_formed_tables).__name__ != 'dict':
+            var_msg = ('The output of the function for `form_summary_table` '
+                       'is not a dictionary and it needs to be')
+            module_logger.error(var_msg)
             raise ValueError(var_msg)
-        df_joined = pd.concat(
-            [
-                df[[col for col in df_new]],
-                df_new
-            ],
-            axis=0
-        )
-        df_joined.reset_index(drop=True, inplace=True)
-        self.df_appended = df_joined.copy()
-        module_logger.info("Completed `append_table`")
+        self.formed_tables = dict_formed_tables
+
+        module_logger.info("Completed `form_summary_tables`")
 
     def get_step_no(self):
         module_logger.info("Starting `get_step_no`")

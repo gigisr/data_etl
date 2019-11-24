@@ -69,25 +69,26 @@ class Checks:
             df.loc[df.shape[0]] = list_vals
             self.df_issues = df.copy()
         except:
-            module_logger.error(
-                f"Logging the issue failed, values: {list_vals}")
-            raise ValueError("Logging an issue has failed, can not continue")
+            var_msg = f"Logging the issue failed, values: {list_vals}"
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
         module_logger.info(f"Error logged: {list_vals}")
 
     def set_defaults(
             self, columns=None, check_condition=None, count_condition=None,
             index_position=None, relevant_columns=None, long_description=None,
             idx_flag=None):
+        module_logger.info("Starting `set_defaults`")
         if columns is not None:
             if type(columns).__name__ != 'list':
-                var_msg = ''
+                var_msg = 'The `columns` argument is not a list as required'
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
             if len(columns) == 0:
                 var_msg = ('The `columns` argument is empty, it needs to be '
                            'at least length 1, this can be a null')
                 module_logger.error(var_msg)
-                raise ValueError()
+                raise ValueError(var_msg)
             self.__checks_defaults['columns'] = columns
         if check_condition is not None:
             self.__set_defaults_check(check_condition, 'check_condition')
@@ -110,9 +111,11 @@ class Checks:
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
             self.__checks_defaults['idx_flag'] = idx_flag
+        module_logger.info("Completed `set_defaults`")
 
     @staticmethod
     def __set_defaults_check(function, label):
+        module_logger.info("Starting `__set_defaults_check`")
         if type(function).__name__ != 'function':
             var_msg = f'The passed value for `{label}` is not a function'
             module_logger.error(var_msg)
@@ -129,6 +132,7 @@ class Checks:
                        f'`{label}` and is required')
             module_logger.error(var_msg)
             raise ValueError(var_msg)
+        module_logger.info("Completed `__set_defaults_check`")
 
     def set_key_separator(self, separator):
         module_logger.info("Starting `set_key_separator`")
@@ -153,7 +157,7 @@ class Checks:
             dict_checks = getattr(mod, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
-                var_msg = ""
+                var_msg = "The `dictionary` argument is not a dictionary"
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
             dict_checks = dictionary
@@ -183,10 +187,6 @@ class Checks:
         if "calc_condition" not in dict_check_info:
             var_required_keys += 1
             var_msg = "The check requires a value for key `calc_condition`"
-            module_logger.error(var_msg)
-        if var_required_keys > 0:
-            var_msg = (f"Not all the required keys are present for the "
-                       f"check {check_key}")
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
         func_calc_condition = dict_check_info["calc_condition"]
@@ -222,10 +222,9 @@ class Checks:
             self.__checks_defaults['category'] if
             "category" not in dict_check_info else
             dict_check_info['category'])
-        # TODO can we default to [np.nan] and remove the if? Make the if
-        #  just a check for the length being > 0?
         if len(list_columns) == 0:
-            var_msg = ''
+            var_msg = ('The `list_columns` value somehow has length 0, needs '
+                       'to have at least one element, which can be `np.nan`')
             module_logger.error(var_msg)
             raise ValueError(var_msg)
         for col in list_columns:
@@ -262,31 +261,37 @@ class Checks:
             var_msg = (
                 f"The variable `var_long_description` is not a string! It is a"
                 f" {type(var_long_description).__name__}")
-            module_logger.error(var_msg)
-        if type(var_relevant_columns).__name__ != "str":
+            module_logger.warning(var_msg)
+        if (
+            (type(var_relevant_columns).__name__ != "str") &
+            (pd.isnull(var_relevant_columns) is False)
+        ):
             var_msg = (
-                f"The variable `var_relevant_columns` is not a string! It is a"
-                f" {type(var_relevant_columns).__name__}")
-            module_logger.error(var_msg)
+                f"The variable `var_relevant_columns` is not a string or null! "
+                f"It is a {type(var_relevant_columns).__name__}")
+            module_logger.warning(var_msg)
         if "int" not in type(var_count_condition).__name__:
             var_msg = (
                 f"The variable `var_count_condition` is not an integer! It is a"
                 f" {type(var_count_condition).__name__}")
-            module_logger.error(var_msg)
+            module_logger.warning(var_msg)
         if type(s_calc_condition).__name__ != "Series":
             var_msg = (
                 f"The variable `s_calc_condition` is not a Series! It is a "
                 f"{type(s_calc_condition).__name__}")
-            module_logger.error(var_msg)
+            module_logger.warning(var_msg)
         if type(s_index_conditions).__name__ != "Series":
             var_msg = (
                 f"The variable `s_index_conditions` is not a Series! It is a "
                 f"{type(s_index_conditions).__name__}")
-            module_logger.error(var_msg)
-        if type(var_category).__name__ != 'str':
-            var_msg = (f'The variable `category` is not a string! It is a '
-                       f'{type(var_category).__name__}')
-            module_logger.error(var_msg)
+            module_logger.warning(var_msg)
+        if (
+            (type(var_category).__name__ != 'str') &
+            (pd.isnull(var_category) is False)
+        ):
+            var_msg = (f'The variable `category` is not a string or null! It '
+                       f'is a {type(var_category).__name__}')
+            module_logger.warning(var_msg)
         if var_check_condition:
             if pd.isnull(table_key):
                 var_file = np.nan
@@ -328,6 +333,10 @@ class Checks:
                        f"present in the `df_issues` table")
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
+        if type(table).__name__ != 'DataFrame':
+            var_msg = 'The `table` argument is not a DataFrame as required'
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
         df_check = table.loc[
             [
                 int(item) for item in
@@ -335,7 +344,7 @@ class Checks:
             ]
         ]
         module_logger.info("Completed `table_look`")
-        return df_check
+        return self.df_issues.loc[[issue_idx]], df_check
 
     def set_step_no(self, step_no):
         """

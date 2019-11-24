@@ -60,11 +60,7 @@ if __name__ == "__main__":
     func_check_for_issues(data.get_issue_count(3, 3), cnxs, 'df_issues',
                           data.df_issues, 2, start_time=var_start_time)
 
-    data.set_step_no(4)
-    data.concatenate_tables()
-    data.append_table(data.tables)
-
-    check.set_step_no(5)
+    check.set_step_no(4)
     check.set_defaults(idx_flag=True)
     check.apply_checks(data.tables, "checks_1", ".")
     func_check_for_issues(check.get_issue_count(5, 5), cnxs, 'df_issues',
@@ -79,7 +75,7 @@ if __name__ == "__main__":
     # Temporary snapshot for testing
     pickle.dump(
         {'data': data, 'checks': check, 'report': reporting},
-        open("../../pickles/dict_dc.pkl", "wb"))
+        open("../../data/pickles/dict_dc.pkl", "wb"))
 
     # Log issues found
     func_check_for_issues(data.get_issue_count(), cnxs, 'df_issues',
