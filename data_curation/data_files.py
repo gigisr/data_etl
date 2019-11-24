@@ -887,8 +887,8 @@ class DataCuration:
 
         if function is not None:
             if type(function).__name__ != "function":
-                var_msg = ("The function passed to `self.read_in_headers` is "
-                           "not a function.")
+                var_msg = ("The function passed to `self.form_summary_tables` "
+                           "is not a function.")
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
         elif (script_name is not None) & (path is not None):
@@ -907,8 +907,8 @@ class DataCuration:
             raise ValueError(var_msg)
 
         dict_formed_tables = function(
-            self.tables, self.__grouping, self.__key_1, self.__key_2,
-            self.__key_3, self.__key_separator, **kwargs)
+            self.tables, self.formed_tables, self.__grouping, self.__key_1,
+            self.__key_2, self.__key_3, self.__key_separator, **kwargs)
         if type(dict_formed_tables).__name__ != 'dict':
             var_msg = ('The output of the function for `form_summary_table` '
                        'is not a dictionary and it needs to be')

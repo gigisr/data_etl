@@ -52,25 +52,33 @@ if __name__ == "__main__":
     data.set_step_no(2)
     data.assert_nulls([""])
     data.convert_columns("convert_columns", ".")
-    func_check_for_issues(data.get_issue_count(2, 2), cnxs, 'df_issues',
-                          data.df_issues, 2, start_time=var_start_time)
+    func_check_for_issues(
+        data.get_issue_count(2, 2), cnxs, 'df_issues', data.df_issues,
+        data.get_step_no(), start_time=var_start_time)
 
     data.set_step_no(3)
     data.alter_tables("alter_cols", ".")
-    func_check_for_issues(data.get_issue_count(3, 3), cnxs, 'df_issues',
-                          data.df_issues, 2, start_time=var_start_time)
+    func_check_for_issues(
+        data.get_issue_count(3, 3), cnxs, 'df_issues', data.df_issues,
+        data.get_step_no(), start_time=var_start_time)
 
-    check.set_step_no(4)
+    data.set_step_no(4)
+    data.concatenate_tables()
+
+    check.set_step_no(5)
     check.set_defaults(idx_flag=True)
     check.apply_checks(data.tables, "checks_1", ".")
-    func_check_for_issues(check.get_issue_count(5, 5), cnxs, 'df_issues',
-                          check.df_issues, 2, var_checks_1_pass, var_start_time)
+    func_check_for_issues(
+        check.get_issue_count(5, 5), cnxs, 'df_issues', check.df_issues,
+        check.get_step_no(), var_checks_1_pass, var_start_time)
 
     # Now the data is cleansed do the reporting, this would ideally be post
     # writing to DB
-    # reporting.form_tables(data.tables, script_name='reporting_1', path='.')
-    # reporting.set_file_path('../data/deliverables/pipeline_test_1/')
-    # reporting.apply_reporting(script_name='reporting_1', path='.')
+    data.set_step_no(6)
+    data.form_summary_tables(script_name='reporting_1', path='.')
+    reporting.set_file_path('../../data/deliverables/pipeline_test_1/')
+    reporting.apply_reporting(data.formed_tables, script_name='reporting_1',
+                              path='.')
 
     # Temporary snapshot for testing
     pickle.dump(
@@ -78,10 +86,8 @@ if __name__ == "__main__":
         open("../../data/pickles/dict_dc.pkl", "wb"))
 
     # Log issues found
-    func_check_for_issues(data.get_issue_count(), cnxs, 'df_issues',
-                          data.df_issues, 2, start_time=var_start_time)
-    func_check_for_issues(check.get_issue_count(), cnxs, 'df_issues',
-                          check.df_issues, 2, start_time=var_start_time)
+    cnxs.write_to_db('df_issues', data.df_issues)
+    cnxs.write_to_db('df_issues', check.df_issues)
 
     logging.info("Script time taken: {}".format(
         str(datetime.now() - var_start_time)))

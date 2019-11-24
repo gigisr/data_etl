@@ -141,8 +141,13 @@ class Reporting:
             # TODO join the full file path together here and pass to the report
             #  functions
             if var_report_type == 'general':
-                self.__any_report(dict_use['function'], tables, var_file_path,
-                                  **kwargs)
+                var_file_name = dict_use['file_name'](
+                    tables, self.__file_path, self.__grouping, self.__key_1,
+                    self.__key_2, self.__key_3, **kwargs)
+                self.__any_report(
+                    dict_use['function'], tables, var_file_path, var_file_name,
+                    self.__grouping, self.__key_1, self.__key_2, self.__key_3,
+                    **kwargs)
             # elif var_report_type == 'chart':
             #     if 'chart' not in dict_report[report_key]:
             #         var_msg = 'The key `chart` is not present when it should be'
@@ -166,9 +171,11 @@ class Reporting:
         module_logger.info("Completed `apply_reporting`")
 
     @staticmethod
-    def __any_report(function, tables, file_path, **kwargs):
+    def __any_report(function, tables, file_path, file_name, grouping, key_1,
+                     key_2, key_3, **kwargs):
         module_logger.info("Starting `__any_report`")
-        function(tables, file_path, **kwargs)
+        function(tables, file_path, file_name, grouping, key_1, key_2, key_3,
+                 **kwargs)
         module_logger.info("Completed `__any_report`")
 
     # def __report_chart(self, tables, dict_report, **kwargs):
