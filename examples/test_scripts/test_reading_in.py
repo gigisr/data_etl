@@ -37,7 +37,7 @@ def read_headers(filepath):
     return dict_headers
 
 
-def link_headers(dfs, df_headers, **kwargs):
+def link_headers(dfs, df_headers):
     dict_link = dict()
     for key_df in dfs.keys():
         for key_header in df_headers.keys():

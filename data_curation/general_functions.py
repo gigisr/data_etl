@@ -2,6 +2,9 @@
 # these data curation scripts are predefined here
 import logging
 import os
+from datetime import datetime
+
+import pandas as pd
 
 module_logger = logging.getLogger(__name__)
 
@@ -24,10 +27,22 @@ def func_initialise_logging(script_name, log_folder_path, var_key_1, var_key_2,
                  f"{var_start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
 
-def func_check_for_issues(
-        issue_count, cnx, cnx_key, table, step_no, override=False):
+def func_check_for_issues(issue_count, cnx, cnx_key, table, step_no,
+                          override=False, start_time=None):
     if (issue_count > 0) & (override is not True):
         cnx.write_to_db(cnx_key, table)
         var_msg = f'There were {issue_count} issues found at step {step_no}'
         module_logger.error(var_msg)
+        if start_time is not None:
+            module_logger.info("Script time taken: {}".format(
+                str(datetime.now() - start_time)))
         raise ValueError(var_msg)
+
+
+def func_to_sql(x, datetime_format='%Y-%m-%d'):
+    if pd.isnull(x):
+        return "NULL"
+    elif type(x).__name__ == 'Timestamp':
+        return f"'{x.strftime(datetime_format)}'"
+    else:
+        return f"'{str(x)}'"

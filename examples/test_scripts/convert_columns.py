@@ -40,7 +40,7 @@ dict_convert['int'] = {
     }
 }
 dict_convert['float'] = {
-    'columns': [],
+    'columns': ['lat', 'lng'],
     'dtypes': ['float'],
     'functions': {
         1: lambda df, col, **kwargs: df[col].astype(float),
@@ -74,5 +74,6 @@ dict_convert['string'] = {
     'dtypes': [],
     'functions': {
         1: lambda df, col, **kwargs: func_string_format(df, col)
-    }
+    },
+    'idx_function': lambda df, col, **kwargs: pd.Series(True, index=df.index)
 }

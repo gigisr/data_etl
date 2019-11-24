@@ -1,7 +1,13 @@
 logs/*.log
-*.ipynb_checkpoints/*
+*/.ipynb_checkpoints/*
 .idea/*
 */__pycache__/*
 pickles/*
 __pycache__/*
 *~*
+data/processed/*
+data/deliverables/*
+*.pkl
+*.tsv
+*.db
+.ipynb_checkpoints/*
