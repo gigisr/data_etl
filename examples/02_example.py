@@ -1,3 +1,6 @@
+# This script is used in the `02_examples.ipynb` file to highlight how using 
+# externally defined information works
+
 import pandas as pd
 
 dict_cat_1_map = {
