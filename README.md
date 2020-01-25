@@ -21,7 +21,7 @@ There is also benefit in performing checks in bulk, even if they produce issues,
 There is a YML file for the main requirements.
 
 ```
-conda craete --file condaenv.yml
+conda env create --file condaenv.yml
 ```
 
 Then you can use `pip` to install the `data_curation` module, navigate to the same directory as contains the `setup.py` file then:
