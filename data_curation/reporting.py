@@ -33,7 +33,6 @@ class Reporting:
     __key_2 = None
     __key_3 = None
     df_issues = None
-    tables = dict()
     __defaults = {
         'type': 'general'
         # TODO add file path into here instead of its own stand

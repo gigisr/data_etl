@@ -150,7 +150,7 @@ class Connections:
         elif var_cnx_type == 'sqlite3':
             cnx = sqlite3.connect(dict_cnx['file_path'])
             try:
-                df = pd.read_sql(sql_stmt)
+                df = pd.read_sql(sql_stmt, cnx)
                 cnx.close()
             except:
                 cnx.close()
@@ -160,7 +160,7 @@ class Connections:
         elif var_cnx_type == 'db':
             cnx = sqlite3.connect(dict_cnx['cnx_string'])
             try:
-                df = pd.read_sql(sql_stmt)
+                df = pd.read_sql(sql_stmt, cnx)
                 cnx.close()
             except:
                 cnx.close()

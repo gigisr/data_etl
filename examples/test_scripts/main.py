@@ -77,8 +77,8 @@ if __name__ == "__main__":
     data.set_step_no(6)
     data.form_summary_tables(script_name='reporting_1', path='.')
     reporting.set_file_path('../../data/deliverables/pipeline_test_1/')
-    reporting.apply_reporting(data.formed_tables, script_name='reporting_1',
-                              path='.')
+    reporting.apply_reporting(
+        data.formed_tables, script_name='reporting_1', path='.')
 
     # Temporary snapshot for testing
     pickle.dump(
