@@ -9,13 +9,13 @@ import pandas as pd
 module_logger = logging.getLogger(__name__)
 
 
-def func_initialise_logging(script_name, log_folder_path, var_key_1, var_key_2,
-                            var_key_3, var_start_time):
+def func_initialise_logging(
+        script_name, log_folder_path, key_1, key_2, key_3, start_time):
     var_log_name = os.path.abspath(
         os.path.join(
             log_folder_path,
-            (f"{script_name}_{var_key_1}_{var_key_2}_{var_key_3}_"
-             f"{var_start_time.strftime('%Y%m%d_%H%M%S')}.log")
+            (f"{script_name}_{key_1}_{key_2}_{key_3}_"
+             f"{start_time.strftime('%Y%m%d_%H%M%S')}.log")
         )
     )
     logging.basicConfig(
@@ -24,7 +24,7 @@ def func_initialise_logging(script_name, log_folder_path, var_key_1, var_key_2,
         format="%(asctime)s|%(name)s|%(levelname)s|%(message)s")
 
     logging.info(f"Starting the process at "
-                 f"{var_start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                 f"{start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
 
 def func_check_for_issues(issue_count, cnx, cnx_key, table, step_no,

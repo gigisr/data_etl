@@ -6,5 +6,5 @@ setup(
     packages=['data_curation',],
     license='MIT',
     
-    author='Gigi',
+    author='GigiSR', requires=['pandas', 'numpy']
 )

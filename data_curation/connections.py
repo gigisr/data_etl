@@ -150,7 +150,7 @@ class Connections:
         elif var_cnx_type == 'sqlite3':
             cnx = sqlite3.connect(dict_cnx['file_path'])
             try:
-                df = pd.read_sql(sql_stmt)
+                df = pd.read_sql(sql_stmt, cnx)
                 cnx.close()
             except:
                 cnx.close()
@@ -158,9 +158,9 @@ class Connections:
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
         elif var_cnx_type == 'db':
-            cnx = sqlite3.connect(dict_cnx['cnx_string'])
+            cnx = pyodbc.connect(dict_cnx['cnx_string'])
             try:
-                df = pd.read_sql(sql_stmt)
+                df = pd.read_sql(sql_stmt, cnx)
                 cnx.close()
             except:
                 cnx.close()
@@ -206,7 +206,7 @@ class Connections:
 
             cnx.close()
         elif var_cnx_type == 'db':
-            cnx = sqlite3.connect(dict_cnx['cnx_string'])
+            cnx = pyodbc.connect(dict_cnx['cnx_string'])
             cursor = cnx.cursor()
 
             var_sql = (f"CREATE TABLE #Temp{dict_cnx['table_name']} AS "

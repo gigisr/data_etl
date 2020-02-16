@@ -94,6 +94,15 @@ class DataCuration:
             f"Completed `set_step_no`, the step number is {self.__step_no}")
 
     def set_key_separator(self, separator):
+        """
+        The key separator is used in the error handling section to split out the
+        file and sub file portions of the dictionary keys of the files read in.
+
+        So if you have a key of 'file name -:- sheet name', for tables read in
+        from an Excel file, and an issue is found. The associated issues log
+        entry will then have a file value of 'file name' and a sub file value of
+        'sheet name'.
+        """
         module_logger.info("Starting `set_key_separator`")
         if (type(separator).__name__ != "str") | (len(separator) == 0):
             var_msg = ("The argument `separator` for function "
@@ -244,9 +253,10 @@ class DataCuration:
         self.set_table(dfs, overwrite=overwrite)
         if type(dfs).__name__ == "DataFrame":
             module_logger.info(f"The table has shape '{dfs.shape}'")
-        for key in dfs:
-            module_logger.info(
-                f"The table with key '{key}' has shape '{dfs[key].shape}'")
+        else:
+            for key in dfs:
+                module_logger.info(
+                    f"The table with key '{key}' has shape '{dfs[key].shape}'")
 
         module_logger.info("Completed `reading_in`")
 
