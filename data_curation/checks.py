@@ -202,6 +202,8 @@ class Checks:
             self.__checks_defaults['columns'] if
             "columns" not in dict_check_info else
             dict_check_info["columns"])
+        if type(list_columns).__name__ == 'str':
+            list_columns = [list_columns]
         func_count_condition = (
             self.__checks_defaults['count_condition'] if
             "count_condition" not in dict_check_info else
