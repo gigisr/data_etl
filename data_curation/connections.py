@@ -140,6 +140,7 @@ class Connections:
 
     def read_from_db(self, cnx_key, sql_stmt):
         module_logger.info("Starting `read_from_db`")
+        module_logger.info(f'Sql statement: {sql_stmt}')
         dict_cnx = self.__dict_cnx[cnx_key]
         var_cnx_type = dict_cnx['cnx_type']
         df = pd.DataFrame()
@@ -170,7 +171,8 @@ class Connections:
         module_logger.info("Completed `read_from_db`")
         return df
 
-    def write_to_db(self, cnx_key, table, batch_size=None):
+    def write_to_db(self, cnx_key, table, batch_size=None,
+                    flag_sql_logging=False):
         module_logger.info("Starting `write_to_db`")
         dict_cnx = self.__dict_cnx[cnx_key]
         var_cnx_type = dict_cnx['cnx_type']
@@ -183,6 +185,7 @@ class Connections:
             cursor = cnx.cursor()
             var_sql = (f"CREATE TEMP TABLE temp.{dict_cnx['table_name']} AS "
                        f"SELECT * FROM {dict_cnx['table_name']} LIMIT 0;")
+            module_logger.info(var_sql)
             cursor.execute(var_sql)
             cnx.commit()
             for idx in table.index.tolist():
@@ -195,6 +198,8 @@ class Connections:
                         ).astype(str).values.tolist()
                     )
                 )
+                if flag_sql_logging:
+                    module_logger.info(var_sql)
                 cursor.execute(var_sql)
                 cnx.commit()
 
@@ -209,16 +214,18 @@ class Connections:
             cnx = pyodbc.connect(dict_cnx['cnx_string'])
             cursor = cnx.cursor()
 
-            var_sql = (f"CREATE TABLE #Temp{dict_cnx['table_name']} AS "
-                       f"SELECT TOP(0) * FROM {dict_cnx['table_name']};")
+            var_sql = (f"SELECT TOP(0) * INTO #Temp{dict_cnx['table_name']} "
+                       f"FROM {dict_cnx['table_name']}")
+            module_logger.info(var_sql)
             cursor.execute(var_sql)
             cnx.commit()
 
             var_sql_template = "INSERT INTO #Temp{} ({}) VALUES {}".format(
                 dict_cnx['table_name'],
-                "'{}'".format("', '".join(table.columns.tolist())),
+                ", ".join(table.columns.tolist()),
                 '{}'
             )
+            module_logger.info(var_sql_template)
             s_sql_values = table.apply(
                 lambda s: s.map(
                     lambda x: func_to_sql(x, dict_cnx['timestamp_format']))
@@ -230,6 +237,8 @@ class Connections:
                              var_iloc_min:(i * batch_size)]
                 var_sql = var_sql_template.format(
                     ", ".join(s_filtered.values.tolist()))
+                if flag_sql_logging:
+                    module_logger.info(var_sql)
                 cursor.execute(var_sql)
                 cnx.commit()
                 var_iloc_min = i * batch_size
@@ -272,7 +281,7 @@ class Connections:
             try:
                 var_sql_template = "INSERT INTO {} ({}) VALUES {}".format(
                     dict_cnx['table_name'],
-                    "'{}'".format("', '".join(table.columns.tolist())),
+                    ", ".join(table.columns.tolist()),
                     '{}'
                 )
                 s_sql_values = table.apply(
