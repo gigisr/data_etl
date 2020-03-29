@@ -455,7 +455,7 @@ class DataCuration:
 
         module_logger.info("Completed `link_headers`")
 
-    def assert_linked_headers(self):
+    def assert_linked_headers(self, reset_index=False):
         module_logger.info("Starting `assert_linked_headers`")
 
         list_ideal_headers = self.headers[
@@ -477,9 +477,17 @@ class DataCuration:
             list_remove = df_remove.loc[df_remove.notnull()].index.tolist()
             list_remove.pop(list_remove.index(0))
             list_remove_names = [list_new_names[idx - 1] for idx in list_remove]
-
             self.tables[key].columns = list_new_names
             self.tables[key].drop(list_remove_names, axis=1, inplace=True)
+
+            var_drop_len = df_new_headers.loc[
+                df_new_headers[0] == 'Header'].shape[0]
+            self.tables[key].drop(
+                self.tables[key].iloc[:var_drop_len].index.tolist(),
+                inplace=True
+            )
+            if reset_index:
+                self.tables[key].reset_index(drop=True, inplace=True)
 
             for col in [
                 col for col in list_ideal_headers if
