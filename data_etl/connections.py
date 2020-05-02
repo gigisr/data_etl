@@ -67,6 +67,8 @@ class Connections:
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
         if cnx_type == 'sqlite3':
+            module_logger.info(
+                f'The information is: {cnx_type}, {file_path}, {table_name}')
             self.__dict_cnx[cnx_key] = {
                 'cnx_type': cnx_type,
                 'file_path': file_path,
@@ -115,6 +117,24 @@ class Connections:
         var_cnx_type = dict_cnx['cnx_type']
         if var_cnx_type == 'sqlite3':
             cnx = sqlite3.connect(dict_cnx['file_path'])
+            var_create_table_sql = """
+            CREATE TABLE IF NOT EXISTS df_issues (
+                key_1 text,
+                key_2 text,
+                key_3 text,
+                file text,
+                sub_file text,
+                step_number integer,
+                category text,
+                issue_short_desc text,
+                issue_long_desc text,
+                column text,
+                issue_count integer,
+                issue_idx text,
+                grouping text
+            );
+            """
+            cnx.execute(var_create_table_sql)
             try:
                 pd.read_sql(
                     f"SELECT * FROM {dict_cnx['table_name']} LIMIT 0;",

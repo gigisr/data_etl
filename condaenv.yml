@@ -1,4 +1,4 @@
-name: data_curation
+name: data_etl
 channels:
   - defaults
 dependencies:

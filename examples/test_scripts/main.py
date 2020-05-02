@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 import pickle
 
-from data_curation import DataCuration, Checks, Connections, Reporting, \
+from data_etl import DataCuration, Checks, Connections, Reporting, \
     func_check_for_issues, func_initialise_logging
 
 if __name__ == "__main__":
@@ -29,7 +29,7 @@ if __name__ == "__main__":
         cnx_key='df_issues', cnx_type='sqlite3', table_name='df_issues',
         file_path='../../data/processed/pipeline.db')
 
-    # Data curation testing
+    # Data etl testing
 
     # Read the files in
     data.find_files("../../data/input/test_scripts_1", "test_reading_in")

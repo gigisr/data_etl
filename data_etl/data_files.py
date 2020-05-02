@@ -949,6 +949,7 @@ class DataCuration:
         return self.__step_no
 
     def _repr_html_(self):
+        module_logger.info("Starting `_repr__html_`")
         var_key_3 = "" if self.__key_3 == "None" else self.__key_3
         var_out_keys = f"""
 <table style="width:30%">
@@ -1018,4 +1019,5 @@ class DataCuration:
         var_out_issues = """
         """
         var_out = f"{var_out_keys}<br><br>{var_out_tbl_info}<br><br>{var_out_issues}"
+        module_logger.info("Completed `_repr_html_`")
         return var_out

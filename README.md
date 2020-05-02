@@ -1,8 +1,8 @@
-# Data Curation
+# Data ETL
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A package for dealing with data curation and checks.
+A package for dealing with data curation, transformation and checks.
 
 This can be reading in and converting to the correct dtypes, making suitable alterations to bring data into a uniform format. Or just taking an existing data set and performing some checks on it.
 
@@ -24,13 +24,13 @@ There is a YML file for the main requirements.
 conda env create --file condaenv.yml
 ```
 
-Then you can use `pip` to install the `data_curation` module, navigate to the same directory as contains the `setup.py` file then:
+Then you can use `pip` to install the `data_etl` module, navigate to the same directory as contains the `setup.py` file then:
 
 ```
 pip install -e .
 ```
 
-This now means you can import `data_curation` from the environment. 
+This now means you can import `data_etl` from the environment. 
 
 ## Examples
 
