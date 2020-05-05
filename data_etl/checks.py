@@ -3,6 +3,8 @@ import logging
 import importlib
 import os
 from inspect import getfullargspec
+from copy import deepcopy
+from inspect import getsourcelines
 
 import pandas as pd
 import numpy as np
@@ -151,9 +153,17 @@ class Checks:
             object_name="dict_checks", dictionary=None, **kwargs):
         module_logger.info("Starting `apply_checks`")
         if (script_name is not None) & (object_name is not None):
-            if not os.path.exists(os.path.join(path, f"{script_name}.py")):
-                raise ValueError("The script does not exist")
-            mod = importlib.import_module(script_name)
+            if (path is None) | (path == '.'):
+                mod = importlib.import_module(script_name)
+            else:
+                var_script_path = os.path.join(path, f"{script_name}.py")
+                if not os.path.exists(var_script_path):
+                    raise ValueError("The script does not exist")
+                print(script_name, var_script_path)
+                spec = importlib.util.spec_from_file_location(
+                    script_name, var_script_path)
+                mod = importlib.import_module(spec)
+                spec.loader.exec_module(mod)
             dict_checks = getattr(mod, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
@@ -183,9 +193,7 @@ class Checks:
     def __apply_the_check(
             self, df, dict_check_info, check_key, table_key, **kwargs):
         module_logger.info(f"Starting check `{check_key}`")
-        var_required_keys = 0
         if "calc_condition" not in dict_check_info:
-            var_required_keys += 1
             var_msg = "The check requires a value for key `calc_condition`"
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
@@ -347,6 +355,72 @@ class Checks:
         ]
         module_logger.info("Completed `table_look`")
         return self.df_issues.loc[[issue_idx]], df_check
+
+    @staticmethod
+    def __func_summary_(key_value):
+        if type(key_value).__name__ == 'function':
+            var_out = ''.join([
+                x.strip().strip("['\\n']") for x in
+                getsourcelines(key_value)[0]
+            ])
+            if (var_out.strip()[-1] == ':') | (var_out.strip()[-1] == '('):
+                return ('raise Exception("The definition does not allow for'
+                        ' this info to be retrieved")')
+            var_out = var_out.split(':')[-1].strip()
+            if var_out[-1] == ',':
+                var_out = var_out[:-1]
+            return var_out
+        else:
+            return key_value
+
+    def summary(self, script_name=None, path=None,
+                object_name="dict_checks", dictionary=None):
+        if (script_name is not None) & (object_name is not None):
+            if (path is None) | (path == '.'):
+                mod = importlib.import_module(script_name)
+            else:
+                var_script_path = os.path.join(path, f"{script_name}.py")
+                if not os.path.exists(var_script_path):
+                    raise ValueError("The script does not exist")
+                spec = importlib.util.spec_from_file_location(
+                    script_name, var_script_path)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+            dict_checks = getattr(mod, object_name)
+        elif dictionary is not None:
+            if type(dictionary).__name__ != "dict":
+                var_msg = "The `dictionary` argument is not a dictionary"
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+            dict_checks = dictionary
+        else:
+            var_msg = ("Either `dictionary` or both of `script_name` and "
+                       "`path` need to be none null")
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
+
+        list_keys = [
+            'calc_condition', 'long_description', 'check_condition', 'columns',
+            'count_condition', 'index_position', 'relevant_columns', 'idx_flag',
+            'category'
+        ]
+
+        dict_checks_values = deepcopy(dict_checks)
+        for check in [key for key in dict_checks_values.keys()]:
+            for key in [key for key in list_keys if
+                        key not in dict_checks_values[check].keys()]:
+                dict_checks_values[check][key] = self.__checks_defaults[key]
+
+        for check in [key for key in dict_checks_values.keys()]:
+            for key in [key for key in dict_checks_values[check].keys()]:
+                dict_checks_values[check][key] = self.__func_summary_(
+                    dict_checks_values[check][key])
+
+        df_summary = pd.DataFrame(
+            dict_checks_values
+        ).T.reset_index().rename(columns={'index': 'check'})
+
+        return {'df': df_summary, 'dict': dict_checks}
 
     def set_step_no(self, step_no):
         """

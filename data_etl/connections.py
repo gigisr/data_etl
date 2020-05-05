@@ -234,14 +234,13 @@ class Connections:
             cnx = pyodbc.connect(dict_cnx['cnx_string'])
             cursor = cnx.cursor()
 
-            var_sql = (f"SELECT TOP(0) * INTO #Temp{dict_cnx['table_name']} "
+            var_sql = (f"SELECT TOP(0) * INTO #Temp "
                        f"FROM {dict_cnx['table_name']}")
             module_logger.info(var_sql)
             cursor.execute(var_sql)
             cnx.commit()
 
-            var_sql_template = "INSERT INTO #Temp{} ({}) VALUES {}".format(
-                dict_cnx['table_name'],
+            var_sql_template = "INSERT INTO #Temp ({}) VALUES {}".format(
                 ", ".join(table.columns.tolist()),
                 '{}'
             )
@@ -263,8 +262,7 @@ class Connections:
                 cnx.commit()
                 var_iloc_min = i * batch_size
 
-            df_test = pd.read_sql(
-                f"SELECT * FROM #Temp{dict_cnx['table_name']}", cnx)
+            df_test = pd.read_sql("SELECT * FROM #Temp", cnx)
 
             if df_test.shape[0] == table.shape[0]:
                 var_write_works += 1

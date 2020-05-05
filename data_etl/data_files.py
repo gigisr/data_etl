@@ -214,12 +214,19 @@ class DataCuration:
                            "function.")
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
-        elif (script_name is not None) & (path is not None):
-            if not os.path.exists(os.path.join(path, f"{script_name}.py")):
-                var_msg = f"The script does not exist: {script_name}.py"
-                module_logger.error(var_msg)
-                raise ValueError(var_msg)
-            mod = importlib.import_module(script_name)
+        elif script_name is not None:
+            if (path is None) | (path == '.'):
+                mod = importlib.import_module(script_name)
+            else:
+                var_script_path = os.path.join(path, f"{script_name}.py")
+                if not os.path.exists(var_script_path):
+                    var_msg = f"The script does not exist: {script_name}.py"
+                    module_logger.error(var_msg)
+                    raise ValueError(var_msg)
+                spec = importlib.util.spec_from_file_location(
+                    script_name, var_script_path)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
             function = getattr(mod, func_name)
         else:
             var_msg = ("One of the `function` or `script_name` arguments needs "
@@ -366,13 +373,19 @@ class DataCuration:
                            "not a function.")
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
-        elif (script_name is not None) & (path is not None):
-            if not os.path.exists(
-                    os.path.join(path, f"{script_name}.py")):
-                var_msg = f"The script does not exist: {script_name}.py"
-                module_logger.error(var_msg)
-                raise ValueError(var_msg)
-            mod = importlib.import_module(script_name)
+        elif script_name is not None:
+            if (path is None) | (path == '.'):
+                mod = importlib.import_module(script_name)
+            else:
+                var_script_path = os.path.join(path, f"{script_name}.py")
+                if not os.path.exists(var_script_path):
+                    var_msg = f"The script does not exist: {script_name}.py"
+                    module_logger.error(var_msg)
+                    raise ValueError(var_msg)
+                spec = importlib.util.spec_from_file_location(
+                    script_name, var_script_path)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
             function = getattr(mod, func_name)
         else:
             var_msg = ("One of the `function` or `script_name` arguments needs "
@@ -416,13 +429,19 @@ class DataCuration:
                            "not a function.")
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
-        elif (script_name is not None) & (path is not None):
-            if not os.path.exists(
-                    os.path.join(path, f"{script_name}.py")):
-                var_msg = f"The script does not exist: {script_name}.py"
-                module_logger.error(var_msg)
-                raise ValueError(var_msg)
-            mod = importlib.import_module(script_name)
+        elif script_name is not None:
+            if (path is None) | (path == '.'):
+                mod = importlib.import_module(script_name)
+            else:
+                var_script_path = os.path.join(path, f"{script_name}.py")
+                if not os.path.exists(var_script_path):
+                    var_msg = f"The script does not exist: {script_name}.py"
+                    module_logger.error(var_msg)
+                    raise ValueError(var_msg)
+                spec = importlib.util.spec_from_file_location(
+                    script_name, var_script_path)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
             function = getattr(mod, func_name)
         else:
             var_msg = ("One of the `function` or `script_name` arguments needs "
@@ -609,11 +628,18 @@ class DataCuration:
         module_logger.info("Starting `alter_tables`")
         # TODO move this check to own function (applies to convert_columns too)
         if (script_name is not None) & (object_name is not None):
-            if not os.path.exists(os.path.join(path, f"{script_name}.py")):
-                var_msg = f"The script does not exist {script_name}.py"
-                module_logger.error(var_msg)
-                raise ValueError(var_msg)
-            mod = importlib.import_module(script_name)
+            if (path is None) | (path == '.'):
+                mod = importlib.import_module(script_name)
+            else:
+                var_script_path = os.path.join(path, f"{script_name}.py")
+                if not os.path.exists(var_script_path):
+                    var_msg = f"The script does not exist {script_name}.py"
+                    module_logger.error(var_msg)
+                    raise ValueError(var_msg)
+                spec = importlib.util.spec_from_file_location(
+                    script_name, var_script_path)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
             dict_alter = getattr(mod, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
@@ -739,11 +765,18 @@ class DataCuration:
                         object_name="dict_convert", dictionary=None, **kwargs):
         module_logger.info("Starting `convert_columns`")
         if (script_name is not None) & (object_name is not None):
-            if not os.path.exists(os.path.join(path, f"{script_name}.py")):
-                var_msg = f"The script does not exist {script_name}.py"
-                module_logger.error(var_msg)
-                raise ValueError(var_msg)
-            mod = importlib.import_module(script_name)
+            if (path is None) | (path == '.'):
+                mod = importlib.import_module(script_name)
+            else:
+                var_script_path = os.path.join(path, f"{script_name}.py")
+                if not os.path.exists(var_script_path):
+                    var_msg = f"The script does not exist {script_name}.py"
+                    module_logger.error(var_msg)
+                    raise ValueError(var_msg)
+                spec = importlib.util.spec_from_file_location(
+                    script_name, var_script_path)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
             dict_convert = getattr(mod, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
@@ -916,13 +949,19 @@ class DataCuration:
                            "is not a function.")
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
-        elif (script_name is not None) & (path is not None):
-            if not os.path.exists(
-                    os.path.join(path, f"{script_name}.py")):
-                var_msg = f"The script does not exist: {script_name}.py"
-                module_logger.error(var_msg)
-                raise ValueError(var_msg)
-            mod = importlib.import_module(script_name)
+        elif script_name is not None:
+            if (path is None) | (path == '.'):
+                mod = importlib.import_module(script_name)
+            else:
+                var_script_path = os.path.join(path, f"{script_name}.py")
+                if not os.path.exists(var_script_path):
+                    var_msg = f"The script does not exist: {script_name}.py"
+                    module_logger.error(var_msg)
+                    raise ValueError(var_msg)
+                spec = importlib.util.spec_from_file_location(
+                    script_name, var_script_path)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
             function = getattr(mod, func_name)
         else:
             var_msg = ("One of the `function` or `script_name` arguments needs "
