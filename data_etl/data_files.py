@@ -114,7 +114,24 @@ class DataCuration:
         module_logger.info(f"Completed `set_key_separator`, the key separator "
                            f"is: {self.__key_separator}")
 
-    def set_file_list(self, list_files):
+    def __import_attr(self, path, script_name, attr_name):
+        if (path is None) | (path == '.'):
+            mod = importlib.import_module(script_name)
+        else:
+            var_script_path = os.path.join(path, f"{script_name}.py")
+            if not os.path.exists(var_script_path):
+                var_msg = f"The script does not exist: {script_name}.py"
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+            spec = importlib.util.spec_from_file_location(
+                script_name, var_script_path)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+        attr = getattr(mod, attr_name)
+
+        return attr
+
+    def set_file_list(self, list_files, append=False):
         """
         If there is a know list of files then define them here rather than
         setting a function to find the files.
@@ -145,12 +162,17 @@ class DataCuration:
                        f"{var_type}")
             module_logger.error(var_msg)
             raise ValueError(var_msg)
-        self.list_files = list_files
+
+        if append:
+            self.list_files += list_files
+        else:
+            self.list_files = list_files
         module_logger.info(f"Completed `set_file_list`, the list of files is: "
                            f"{self.list_files}")
 
-    def find_files(self, path, script_name=None, function=None, append=False,
-                   func_name="list_the_files", **kwargs):
+    def find_files(self, function=None, path=None, script_name=None,
+                   func_name="list_the_files", files_path='.', append=False,
+                   **kwargs):
         """
         Using an externally defined function, as specified in the module
         argument script, acquire a list of files to be read in.
@@ -159,21 +181,9 @@ class DataCuration:
         main paths there is an append option.
         """
         module_logger.info("Starting `find_files`")
+        # TODO move this to an internal function as it's used so often!
         if script_name is not None:
-            mod = importlib.import_module(script_name)
-            try:
-                function = getattr(mod, func_name)
-            except AttributeError:
-                if len([x for x in kwargs.keys()]) > 0:
-                    var_msg = (
-                        f"Function find_files, kwargs may have been passed when"
-                        f" the function {func_name} in the script {script_name}"
-                        f" does not take kwargs")
-                else:
-                    var_msg = (f"Function find_files: the function {func_name} "
-                               f"is not present in the script {script_name}.")
-                module_logger.error(var_msg)
-                raise AttributeError(var_msg)
+            function = self.__import_attr(path, script_name, func_name)
         elif function is not None:
             if type(function).__name__ != "function":
                 var_msg = "The `function` argument needs to be a function"
@@ -184,7 +194,7 @@ class DataCuration:
                        "None in the function `find_files`")
             module_logger.error(var_msg)
             raise ValueError(var_msg)
-        list_files = function(path, **kwargs)
+        list_files = function(files_path, **kwargs)
         # TODO move these to be calls on the self.set_file_list function instead
         #  of setting the value here
         if append:
@@ -215,19 +225,7 @@ class DataCuration:
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
         elif script_name is not None:
-            if (path is None) | (path == '.'):
-                mod = importlib.import_module(script_name)
-            else:
-                var_script_path = os.path.join(path, f"{script_name}.py")
-                if not os.path.exists(var_script_path):
-                    var_msg = f"The script does not exist: {script_name}.py"
-                    module_logger.error(var_msg)
-                    raise ValueError(var_msg)
-                spec = importlib.util.spec_from_file_location(
-                    script_name, var_script_path)
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-            function = getattr(mod, func_name)
+            function = self.__import_attr(path, script_name, func_name)
         else:
             var_msg = ("One of the `function` or `script_name` arguments needs "
                        "to be completed. And if `script name is then `path` "
@@ -374,19 +372,7 @@ class DataCuration:
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
         elif script_name is not None:
-            if (path is None) | (path == '.'):
-                mod = importlib.import_module(script_name)
-            else:
-                var_script_path = os.path.join(path, f"{script_name}.py")
-                if not os.path.exists(var_script_path):
-                    var_msg = f"The script does not exist: {script_name}.py"
-                    module_logger.error(var_msg)
-                    raise ValueError(var_msg)
-                spec = importlib.util.spec_from_file_location(
-                    script_name, var_script_path)
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-            function = getattr(mod, func_name)
+            function = self.__import_attr(path, script_name, func_name)
         else:
             var_msg = ("One of the `function` or `script_name` arguments needs "
                        "to be completed. And if `script name is then `path` "
@@ -430,19 +416,7 @@ class DataCuration:
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
         elif script_name is not None:
-            if (path is None) | (path == '.'):
-                mod = importlib.import_module(script_name)
-            else:
-                var_script_path = os.path.join(path, f"{script_name}.py")
-                if not os.path.exists(var_script_path):
-                    var_msg = f"The script does not exist: {script_name}.py"
-                    module_logger.error(var_msg)
-                    raise ValueError(var_msg)
-                spec = importlib.util.spec_from_file_location(
-                    script_name, var_script_path)
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-            function = getattr(mod, func_name)
+            function = self.__import_attr(path, script_name, func_name)
         else:
             var_msg = ("One of the `function` or `script_name` arguments needs "
                        "to be completed. And if `script name is then `path` "
@@ -628,19 +602,7 @@ class DataCuration:
         module_logger.info("Starting `alter_tables`")
         # TODO move this check to own function (applies to convert_columns too)
         if (script_name is not None) & (object_name is not None):
-            if (path is None) | (path == '.'):
-                mod = importlib.import_module(script_name)
-            else:
-                var_script_path = os.path.join(path, f"{script_name}.py")
-                if not os.path.exists(var_script_path):
-                    var_msg = f"The script does not exist {script_name}.py"
-                    module_logger.error(var_msg)
-                    raise ValueError(var_msg)
-                spec = importlib.util.spec_from_file_location(
-                    script_name, var_script_path)
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-            dict_alter = getattr(mod, object_name)
+            dict_alter = self.__import_attr(path, script_name, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
                 var_msg = "The `dictionary` argument is not a dictionary"
@@ -765,19 +727,7 @@ class DataCuration:
                         object_name="dict_convert", dictionary=None, **kwargs):
         module_logger.info("Starting `convert_columns`")
         if (script_name is not None) & (object_name is not None):
-            if (path is None) | (path == '.'):
-                mod = importlib.import_module(script_name)
-            else:
-                var_script_path = os.path.join(path, f"{script_name}.py")
-                if not os.path.exists(var_script_path):
-                    var_msg = f"The script does not exist {script_name}.py"
-                    module_logger.error(var_msg)
-                    raise ValueError(var_msg)
-                spec = importlib.util.spec_from_file_location(
-                    script_name, var_script_path)
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-            dict_convert = getattr(mod, object_name)
+            dict_convert = self.__import_attr(path, script_name, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
                 var_msg = "The `dictionary` argument is not a dictionary"
@@ -950,19 +900,7 @@ class DataCuration:
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
         elif script_name is not None:
-            if (path is None) | (path == '.'):
-                mod = importlib.import_module(script_name)
-            else:
-                var_script_path = os.path.join(path, f"{script_name}.py")
-                if not os.path.exists(var_script_path):
-                    var_msg = f"The script does not exist: {script_name}.py"
-                    module_logger.error(var_msg)
-                    raise ValueError(var_msg)
-                spec = importlib.util.spec_from_file_location(
-                    script_name, var_script_path)
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-            function = getattr(mod, func_name)
+            function = self.__import_attr(path, script_name, func_name)
         else:
             var_msg = ("One of the `function` or `script_name` arguments needs "
                        "to be completed. And if `script name is then `path` "

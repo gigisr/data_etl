@@ -76,6 +76,23 @@ class Checks:
             raise ValueError(var_msg)
         module_logger.info(f"Error logged: {list_vals}")
 
+    def __import_attr(self, path, script_name, attr_name):
+        if (path is None) | (path == '.'):
+            mod = importlib.import_module(script_name)
+        else:
+            var_script_path = os.path.join(path, f"{script_name}.py")
+            if not os.path.exists(var_script_path):
+                var_msg = f"The script does not exist: {script_name}.py"
+                module_logger.error(var_msg)
+                raise ValueError(var_msg)
+            spec = importlib.util.spec_from_file_location(
+                script_name, var_script_path)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+        attr = getattr(mod, attr_name)
+
+        return attr
+
     def set_defaults(
             self, columns=None, check_condition=None, count_condition=None,
             index_position=None, relevant_columns=None, long_description=None,
@@ -153,18 +170,7 @@ class Checks:
             object_name="dict_checks", dictionary=None, **kwargs):
         module_logger.info("Starting `apply_checks`")
         if (script_name is not None) & (object_name is not None):
-            if (path is None) | (path == '.'):
-                mod = importlib.import_module(script_name)
-            else:
-                var_script_path = os.path.join(path, f"{script_name}.py")
-                if not os.path.exists(var_script_path):
-                    raise ValueError("The script does not exist")
-                print(script_name, var_script_path)
-                spec = importlib.util.spec_from_file_location(
-                    script_name, var_script_path)
-                mod = importlib.import_module(spec)
-                spec.loader.exec_module(mod)
-            dict_checks = getattr(mod, object_name)
+            dict_checks = self.__import_attr(path, script_name, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
                 var_msg = "The `dictionary` argument is not a dictionary"
@@ -376,17 +382,7 @@ class Checks:
     def summary(self, script_name=None, path=None,
                 object_name="dict_checks", dictionary=None):
         if (script_name is not None) & (object_name is not None):
-            if (path is None) | (path == '.'):
-                mod = importlib.import_module(script_name)
-            else:
-                var_script_path = os.path.join(path, f"{script_name}.py")
-                if not os.path.exists(var_script_path):
-                    raise ValueError("The script does not exist")
-                spec = importlib.util.spec_from_file_location(
-                    script_name, var_script_path)
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-            dict_checks = getattr(mod, object_name)
+            dict_checks = self.__import_attr(path, script_name, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
                 var_msg = "The `dictionary` argument is not a dictionary"

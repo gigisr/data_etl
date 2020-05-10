@@ -42,7 +42,7 @@ class Connections:
 
     def add_cnx(self, cnx_key, cnx_type, table_name, cnx_string=None,
                 file_path=None, config_section=None, overwrite=False,
-                timestamp_format='%Y-%m-%d'):
+                timestamp_format='%Y-%m-%d', **kwargs):
         module_logger.info(f"Starting `add_cnx` for cnx key `{cnx_key}`")
         # TODO query is the file existing, if not then error out
         if (cnx_key in self.__dict_cnx) & (overwrite is False):
@@ -62,10 +62,14 @@ class Connections:
             var_msg = 'The argument `file_path` is required'
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
-        if (not os.path.exists(file_path)) & (cnx_type in ['sqlite3', 'db']):
+        if (not os.path.exists(file_path)) & (cnx_type in ['db']):
             var_msg = f'The `file_path` {file_path} is not valid'
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
+        if (not os.path.exists(file_path)) & (cnx_type in ['sqlite3']):
+            var_msg = (f'The `file_path` {file_path} is not valid so this '
+                       f'file will be created')
+            module_logger.warning(var_msg)
         if cnx_type == 'sqlite3':
             module_logger.info(
                 f'The information is: {cnx_type}, {file_path}, {table_name}')
@@ -104,10 +108,10 @@ class Connections:
                     'table_name': table_name,
                     'timestamp_format': timestamp_format
                 }
-        self.test_cnx(cnx_key)
+        self.test_cnx(cnx_key, **kwargs)
         module_logger.info("Completed `add_cnx`")
 
-    def test_cnx(self, cnx_key):
+    def test_cnx(self, cnx_key, **kwargs):
         module_logger.info(f"Starting `test_cnx` for cnx key `{cnx_key}`")
         if cnx_key not in self.__dict_cnx:
             var_msg = f'The key {cnx_key} is not present'
@@ -117,24 +121,25 @@ class Connections:
         var_cnx_type = dict_cnx['cnx_type']
         if var_cnx_type == 'sqlite3':
             cnx = sqlite3.connect(dict_cnx['file_path'])
-            var_create_table_sql = """
-            CREATE TABLE IF NOT EXISTS df_issues (
-                key_1 text,
-                key_2 text,
-                key_3 text,
-                file text,
-                sub_file text,
-                step_number integer,
-                category text,
-                issue_short_desc text,
-                issue_long_desc text,
-                column text,
-                issue_count integer,
-                issue_idx text,
-                grouping text
-            );
-            """
-            cnx.execute(var_create_table_sql)
+            if kwargs.get('sqlite_df_issues_create') is True:
+                var_create_table_sql = """
+                CREATE TABLE IF NOT EXISTS {} (
+                    key_1 text,
+                    key_2 text,
+                    key_3 text,
+                    file text,
+                    sub_file text,
+                    step_number integer,
+                    category text,
+                    issue_short_desc text,
+                    issue_long_desc text,
+                    column text,
+                    issue_count integer,
+                    issue_idx text,
+                    grouping text
+                );
+                """.format(dict_cnx['table_name'])
+                cnx.execute(var_create_table_sql)
             try:
                 pd.read_sql(
                     f"SELECT * FROM {dict_cnx['table_name']} LIMIT 0;",
@@ -234,14 +239,15 @@ class Connections:
             cnx = pyodbc.connect(dict_cnx['cnx_string'])
             cursor = cnx.cursor()
 
-            var_sql = (f"SELECT TOP(0) * INTO #Temp "
+            var_sql = (f"DROP TABLE IF EXISTS #Temp "
+                       f"SELECT TOP(0) * INTO #Temp "
                        f"FROM {dict_cnx['table_name']}")
             module_logger.info(var_sql)
             cursor.execute(var_sql)
             cnx.commit()
 
-            var_sql_template = "INSERT INTO #Temp ({}) VALUES {}".format(
-                ", ".join(table.columns.tolist()),
+            var_sql_template = "INSERT INTO #Temp ([{}]) VALUES {}".format(
+                "], [".join(table.columns.tolist()),
                 '{}'
             )
             module_logger.info(var_sql_template)
