@@ -170,9 +170,9 @@ class DataCuration:
         module_logger.info(f"Completed `set_file_list`, the list of files is: "
                            f"{self.list_files}")
 
-    def find_files(self, function=None, path=None, script_name=None,
-                   func_name="list_the_files", files_path='.', append=False,
-                   **kwargs):
+    def find_files(self, path=None, script_name=None,
+                   func_name="list_the_files", function=None, files_path='.',
+                   append=False, **kwargs):
         """
         Using an externally defined function, as specified in the module
         argument script, acquire a list of files to be read in.
@@ -204,8 +204,8 @@ class DataCuration:
         module_logger.info(
             f"Completed `find_files`, the list of files is: {self.list_files}")
 
-    def reading_in(self, function=None, path=None, script_name=None,
-                   func_name="read_files", overwrite=True, **kwargs):
+    def reading_in(self, path=None, script_name=None, func_name="read_files",
+                   function=None, overwrite=True, **kwargs):
         """
         Using an externally defined reading in function, and the internally
         defined list of files, read in each of the tables required.
@@ -358,8 +358,8 @@ class DataCuration:
 
         module_logger.info("Completed `dictionary_tables`")
 
-    def read_in_headers(self, function=None, path=None, script_name=None,
-                        func_name="read_headers", **kwargs):
+    def read_in_headers(self, path=None, script_name=None,
+                        func_name="read_headers", function=None, **kwargs):
         # TODO Need to see if we can isolate just a set of new tables? Maybe
         #  have a list of dictionary keys that have had their headers done
         #  already?
@@ -402,8 +402,8 @@ class DataCuration:
 
         module_logger.info("Completed `read_in_headers`")
 
-    def link_headers(self, function=None, path=None, script_name=None,
-                     func_name="link_headers", **kwargs):
+    def link_headers(self, path=None, script_name=None,
+                     func_name="link_headers", function=None, **kwargs):
         # TODO Need to see if we can isolate just a set of new tables? Maybe
         #  have a list of dictionary keys that have had their headers
         #  done already?
@@ -594,7 +594,7 @@ class DataCuration:
 
         module_logger.info("Completed `set_headers`")
 
-    def alter_tables(self, script_name=None, path=None,
+    def alter_tables(self, path=None, script_name=None,
                      object_name="dict_alter", dictionary=None, **kwargs):
         """
         Use this functionality to make alterations to the table(s)
@@ -723,7 +723,7 @@ class DataCuration:
         module_logger.info("Completed `__alter_cols`")
         return df
 
-    def convert_columns(self, script_name=None, path=None,
+    def convert_columns(self, path=None, script_name=None,
                         object_name="dict_convert", dictionary=None, **kwargs):
         module_logger.info("Starting `convert_columns`")
         if (script_name is not None) & (object_name is not None):
@@ -882,8 +882,8 @@ class DataCuration:
         module_logger.info("Completed `get_issue_count`")
         return var_count
 
-    def form_summary_tables(self, function=None, path=None, script_name=None,
-                            func_name="form_tables", **kwargs):
+    def form_summary_tables(self, path=None, script_name=None,
+                            func_name="form_tables", function=None, **kwargs):
         """
         Use a function to create summaries off the main table set.
 

@@ -115,7 +115,7 @@ class Reporting:
         module_logger.info("Completed `set_file_path`")
 
     def apply_reporting(
-            self, tables, script_name=None, path=None,
+            self, tables, path=None, script_name=None,
             object_name="dict_reporting", dictionary=None, **kwargs):
         module_logger.info(
             f"Starting `apply_reporting` for script {script_name}")

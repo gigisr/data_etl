@@ -166,7 +166,7 @@ class Checks:
                            f"is: {self.__key_separator}")
 
     def apply_checks(
-            self, tables, script_name=None, path=None,
+            self, tables, path=None, script_name=None,
             object_name="dict_checks", dictionary=None, **kwargs):
         module_logger.info("Starting `apply_checks`")
         if (script_name is not None) & (object_name is not None):
@@ -379,7 +379,7 @@ class Checks:
         else:
             return key_value
 
-    def summary(self, script_name=None, path=None,
+    def summary(self, path=None, script_name=None,
                 object_name="dict_checks", dictionary=None):
         if (script_name is not None) & (object_name is not None):
             dict_checks = self.__import_attr(path, script_name, object_name)
