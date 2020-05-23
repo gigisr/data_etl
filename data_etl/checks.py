@@ -1,13 +1,13 @@
 # Here we are defining a class that will deal with checking data sets
 import logging
-import importlib
-import os
 from inspect import getfullargspec
 from copy import deepcopy
 from inspect import getsourcelines
 
 import pandas as pd
 import numpy as np
+
+from general_functions import import_attr
 
 module_logger = logging.getLogger(__name__)
 
@@ -75,23 +75,6 @@ class Checks:
             module_logger.error(var_msg)
             raise ValueError(var_msg)
         module_logger.info(f"Error logged: {list_vals}")
-
-    def __import_attr(self, path, script_name, attr_name):
-        if (path is None) | (path == '.'):
-            mod = importlib.import_module(script_name)
-        else:
-            var_script_path = os.path.join(path, f"{script_name}.py")
-            if not os.path.exists(var_script_path):
-                var_msg = f"The script does not exist: {script_name}.py"
-                module_logger.error(var_msg)
-                raise ValueError(var_msg)
-            spec = importlib.util.spec_from_file_location(
-                script_name, var_script_path)
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-        attr = getattr(mod, attr_name)
-
-        return attr
 
     def set_defaults(
             self, columns=None, check_condition=None, count_condition=None,
@@ -170,7 +153,7 @@ class Checks:
             object_name="dict_checks", dictionary=None, **kwargs):
         module_logger.info("Starting `apply_checks`")
         if (script_name is not None) & (object_name is not None):
-            dict_checks = self.__import_attr(path, script_name, object_name)
+            dict_checks = import_attr(path, script_name, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
                 var_msg = "The `dictionary` argument is not a dictionary"
@@ -382,7 +365,7 @@ class Checks:
     def summary(self, path=None, script_name=None,
                 object_name="dict_checks", dictionary=None):
         if (script_name is not None) & (object_name is not None):
-            dict_checks = self.__import_attr(path, script_name, object_name)
+            dict_checks = import_attr(path, script_name, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
                 var_msg = "The `dictionary` argument is not a dictionary"

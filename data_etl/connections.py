@@ -66,6 +66,12 @@ class Connections:
             var_msg = f'The `file_path` {file_path} is not valid'
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
+        if ((not os.path.exists(os.path.dirname(file_path))) &
+            (cnx_type in ['sqlite3'])):
+            var_msg = (
+                f'The fodler path {os.path.dirname(file_path)} is not valid')
+            module_logger.error(var_msg)
+            raise AttributeError(var_msg)
         if (not os.path.exists(file_path)) & (cnx_type in ['sqlite3']):
             var_msg = (f'The `file_path` {file_path} is not valid so this '
                        f'file will be created')

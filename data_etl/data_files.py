@@ -1,11 +1,11 @@
 # Here we are defining a class that will deal with all the data storage and
 # manipulations
-import os
 import logging
-import importlib
 
 import pandas as pd
 import numpy as np
+
+from general_functions import import_attr
 
 module_logger = logging.getLogger(__name__)
 
@@ -114,23 +114,6 @@ class DataCuration:
         module_logger.info(f"Completed `set_key_separator`, the key separator "
                            f"is: {self.__key_separator}")
 
-    def __import_attr(self, path, script_name, attr_name):
-        if (path is None) | (path == '.'):
-            mod = importlib.import_module(script_name)
-        else:
-            var_script_path = os.path.join(path, f"{script_name}.py")
-            if not os.path.exists(var_script_path):
-                var_msg = f"The script does not exist: {script_name}.py"
-                module_logger.error(var_msg)
-                raise ValueError(var_msg)
-            spec = importlib.util.spec_from_file_location(
-                script_name, var_script_path)
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-        attr = getattr(mod, attr_name)
-
-        return attr
-
     def set_file_list(self, list_files, append=False):
         """
         If there is a know list of files then define them here rather than
@@ -183,7 +166,7 @@ class DataCuration:
         module_logger.info("Starting `find_files`")
         # TODO move this to an internal function as it's used so often!
         if script_name is not None:
-            function = self.__import_attr(path, script_name, func_name)
+            function = import_attr(path, script_name, func_name)
         elif function is not None:
             if type(function).__name__ != "function":
                 var_msg = "The `function` argument needs to be a function"
@@ -225,7 +208,7 @@ class DataCuration:
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
         elif script_name is not None:
-            function = self.__import_attr(path, script_name, func_name)
+            function = import_attr(path, script_name, func_name)
         else:
             var_msg = ("One of the `function` or `script_name` arguments needs "
                        "to be completed. And if `script name is then `path` "
@@ -358,21 +341,24 @@ class DataCuration:
 
         module_logger.info("Completed `dictionary_tables`")
 
-    def read_in_headers(self, path=None, script_name=None,
-                        func_name="read_headers", function=None, **kwargs):
+    def set_comparison_headers(
+            self, path=None, script_name=None, func_name="read_headers",
+            function=None, dictionary=None, **kwargs):
         # TODO Need to see if we can isolate just a set of new tables? Maybe
         #  have a list of dictionary keys that have had their headers done
         #  already?
-        module_logger.info("Starting `read_in_headers`")
+        module_logger.info("Starting `set_comparison_headers`")
 
         if function is not None:
             if type(function).__name__ != "function":
-                var_msg = ("The function passed to `self.read_in_headers` is "
-                           "not a function.")
+                var_msg = ("The function passed to "
+                           "`self.set_comparison_headers` is not a function.")
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
         elif script_name is not None:
-            function = self.__import_attr(path, script_name, func_name)
+            function = import_attr(path, script_name, func_name)
+        elif dictionary is not None:
+            def function(**kwargs): return dictionary
         else:
             var_msg = ("One of the `function` or `script_name` arguments needs "
                        "to be completed. And if `script name is then `path` "
@@ -381,26 +367,77 @@ class DataCuration:
             raise ValueError(var_msg)
 
         try:
-            dfs = function(**kwargs)
-            self.headers = dfs.copy()
+            dict_headers = function(**kwargs)
         except AttributeError:
             if len([x for x in kwargs.keys()]) > 0:
                 var_msg = (
-                    f"Function read_in_headers, kwargs may have been passed "
-                    f"when the function {func_name} in the script {script_name}"
-                    f" does not take kwargs")
+                    f"Function set_comparison_headers, kwargs may have been "
+                    f"passed when the function {func_name} in the script "
+                    f"{script_name} does not take kwargs")
             else:
-                var_msg = (f"Function read_in_headers: The {func_name} function"
-                           f" does not exist in the {script_name} script.")
+                var_msg = (
+                    f"Function set_comparison_headers: The {func_name} function"
+                    f" does not exist in the {script_name} script.")
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
 
-        if len([x for x in dfs.keys() if x == "IdealHeaders"]) == 0:
-            var_msg = "There is no IdealHeaders present"
+        if type(dict_headers).__name__ != 'dict':
+            var_msg = 'The headers output should be a dictionary'
             module_logger.error(var_msg)
-            raise ValueError(var_msg)
+            raise Exception(var_msg)
+        list_keys = [
+            key for key in dict_headers.keys() if key != 'ideal_headers']
+        list_keys = [
+            key for key in list_keys if
+            (dict_headers[key].get('expected_headers') is None) |
+            (dict_headers[key].get('new_headers') is None) |
+            (dict_headers[key].get('remove') is None)
+        ]
+        if len(list_keys) > 0:
+            var_msg = (
+                f'There are dictionary keys that do not have all the required '
+                f'values: {", ".join([str(key) for key in list_keys])}')
+            module_logger.error(var_msg)
+            raise Exception(var_msg)
+        if dict_headers.get('ideal_headers') is None:
+            var_msg = ('There needs to be a key to the headers dictionary that'
+                       ' is "ideal_headers"')
+            module_logger.error(var_msg)
+            raise Exception(var_msg)
+        if type(dict_headers.get('ideal_headers')).__name__ != 'list':
+            var_msg = 'The value of key "ideal_headers" needs to be a list'
+            module_logger.error(var_msg)
+            raise Exception(var_msg)
 
-        module_logger.info("Completed `read_in_headers`")
+        self.headers = dict(dict_headers)
+
+        module_logger.info(
+            f"There are {len(dict_headers)} header keys and they are: "
+            f"{', '.join([key for key in dict_headers.keys()])}")
+
+        module_logger.info("Completed `set_comparison_headers`")
+
+    @staticmethod
+    def _link_headers(tables, headers, **kwargs):
+        dict_link = dict()
+        list_headers_keys = [
+            key for key in headers.keys() if key != 'ideal_headers']
+        if type(tables).__name__ == 'dict':
+            for df_key in [key for key in tables.keys()]:
+                for header_set in list_headers_keys:
+                    list_expected = headers[header_set]['expected_headers']
+                    if list_expected == tables[
+                        df_key].iloc[:len(list_expected)].values.tolist()[0]:
+                        dict_link[df_key] = header_set
+                        break
+        else:
+            for header_set in list_headers_keys:
+                list_expected = headers[header_set]['expected_headers']
+                if list_expected == tables.iloc[
+                    :len(list_expected)].values.tolist()[0]:
+                    dict_link['combined'] = header_set
+                    break
+        return dict_link
 
     def link_headers(self, path=None, script_name=None,
                      func_name="link_headers", function=None, **kwargs):
@@ -416,17 +453,12 @@ class DataCuration:
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
         elif script_name is not None:
-            function = self.__import_attr(path, script_name, func_name)
+            function = import_attr(path, script_name, func_name)
         else:
-            var_msg = ("One of the `function` or `script_name` arguments needs "
-                       "to be completed. And if `script name is then `path` "
-                       "needs to be too.")
-            module_logger.error(var_msg)
-            raise ValueError(var_msg)
+            function = self._link_headers
 
         try:
-            dfs = function(self.tables, self.headers, **kwargs)
-            self.__link_headers = dfs.copy()
+            dict_link = function(self.tables, self.headers, **kwargs)
         except AttributeError:
             if len([x for x in kwargs.keys()]) > 0:
                 var_msg = (
@@ -439,61 +471,79 @@ class DataCuration:
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
 
-        list_unallocated_keys = set(self.tables.keys()) - set(dfs.keys())
+        list_unallocated_keys = set(self.tables.keys()) - set(dict_link.keys())
         if len(list_unallocated_keys) != 0:
             var_msg = (f"Not all the headers are linked, the unlinked tables "
                        f"are: {list_unallocated_keys}")
             module_logger.error(var_msg)
             raise ValueError(var_msg)
 
+        self.__link_headers = dict(dict_link)
+
         module_logger.info("Completed `link_headers`")
 
-    def assert_linked_headers(self, reset_index=False):
+    @staticmethod
+    def __assert_linked_headers(
+        list_ideal_headers, dict_header, df, reset_index):
+        list_expected_headers = dict_header['expected_headers']
+        list_new_names = dict_header['new_headers']
+        list_remove = [
+            item for item in dict_header['remove'] if not pd.isnull(item)]
+
+        # Remove the expected headers rows
+        df.drop(
+            [i for i in range(len(list_expected_headers))],
+            axis=0,
+            inplace=True)
+        if reset_index:
+            df.reset_index(drop=True, inplace=True)
+
+        # Set the new headers
+        df.columns = list_new_names
+
+        # Remove the columns to remove
+        if len(list_remove) > 0:
+            df.drop(list_remove, axis=1, inplace=True)
+
+        # Fill in missing columns and reorder columns
+        list_df_cols = df.columns.tolist()
+        list_cols = [col for col in list_ideal_headers if
+                    col not in list_df_cols]
+        for col in list_cols:
+            df[col] = np.nan
+
+        df = df[list_ideal_headers].copy()
+
+        return df
+
+    def assert_linked_headers(self, reset_index=True):
         module_logger.info("Starting `assert_linked_headers`")
 
-        list_ideal_headers = self.headers[
-            "IdealHeaders"].loc[0].values.tolist()
-        list_keys = [
-            key for key in self.__link_headers.keys() if key != "IdealHeaders"
-        ]
-
-        for key in list_keys:
-            df_new_headers = self.headers[self.__link_headers[key]].copy()
-
-            df_new_name = df_new_headers.loc[
-                df_new_headers[0] == "New name"].copy()
-            df_new_name.drop([0], axis=1, inplace=True)
-            list_new_names = df_new_name.iloc[0].values.tolist()
-
-            df_remove = df_new_headers.loc[
-                df_new_headers[0] == "Remove"].iloc[0].copy()
-            list_remove = df_remove.loc[df_remove.notnull()].index.tolist()
-            list_remove.pop(list_remove.index(0))
-            list_remove_names = [list_new_names[idx - 1] for idx in list_remove]
-            self.tables[key].columns = list_new_names
-            self.tables[key].drop(list_remove_names, axis=1, inplace=True)
-
-            var_drop_len = df_new_headers.loc[
-                df_new_headers[0] == 'Header'].shape[0]
-            self.tables[key].drop(
-                self.tables[key].iloc[:var_drop_len].index.tolist(),
-                inplace=True
+        if type(self.tables).__name__ == 'dict':
+            dict_dfs = dict(self.tables)
+            for key in [key for key in self.__link_headers.keys()]:
+                dict_dfs[key] = self.__assert_linked_headers(
+                    self.headers['ideal_headers'],
+                    self.headers[self.__link_headers[key]],
+                    dict_dfs[key],
+                    reset_index
+                )
+            self.set_table(dict(dict_dfs))
+        else:
+            key = [key for key in self.__link_headers.keys()][0]
+            df = self.__assert_linked_headers(
+                self.headers['ideal_headers'],
+                self.headers[self.__link_headers[key]],
+                self.tables,
+                reset_index
             )
-            if reset_index:
-                self.tables[key].reset_index(drop=True, inplace=True)
-
-            for col in [
-                col for col in list_ideal_headers if
-                col not in self.tables[key].columns.tolist()
-            ]:
-                self.tables[key][col] = np.nan
-
-            self.tables[key] = self.tables[key][list_ideal_headers].copy()
+            self.set_table(df.copy())
 
         module_logger.info("Completed `assert_linked_headers`")
 
-    def set_headers(self, list_cols=None, function=None, ideal_headers=None,
-                    required_headers=None):
+    def set_headers(
+            self, path=None, script_name=None, func_name=None, list_cols=None,
+            function=None, ideal_headers=None, required_headers=None):
         module_logger.info("Starting `set_headers`")
         if list_cols is not None:
             if type(list_cols).__name__ != "list":
@@ -507,6 +557,8 @@ class DataCuration:
                            "needs to be a function")
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
+        elif script_name is not None:
+            function = import_attr(path, script_name, func_name)
         elif ideal_headers is not None:
             if type(ideal_headers).__name__ != 'list':
                 var_msg = ("The argument `ideal_headers` of function "
@@ -602,7 +654,7 @@ class DataCuration:
         module_logger.info("Starting `alter_tables`")
         # TODO move this check to own function (applies to convert_columns too)
         if (script_name is not None) & (object_name is not None):
-            dict_alter = self.__import_attr(path, script_name, object_name)
+            dict_alter = import_attr(path, script_name, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
                 var_msg = "The `dictionary` argument is not a dictionary"
@@ -727,7 +779,7 @@ class DataCuration:
                         object_name="dict_convert", dictionary=None, **kwargs):
         module_logger.info("Starting `convert_columns`")
         if (script_name is not None) & (object_name is not None):
-            dict_convert = self.__import_attr(path, script_name, object_name)
+            dict_convert = import_attr(path, script_name, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
                 var_msg = "The `dictionary` argument is not a dictionary"
@@ -900,7 +952,7 @@ class DataCuration:
                 module_logger.error(var_msg)
                 raise ValueError(var_msg)
         elif script_name is not None:
-            function = self.__import_attr(path, script_name, func_name)
+            function = import_attr(path, script_name, func_name)
         else:
             var_msg = ("One of the `function` or `script_name` arguments needs "
                        "to be completed. And if `script name is then `path` "

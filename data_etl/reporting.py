@@ -2,9 +2,10 @@
 # have checked
 import logging
 import os
-import importlib
 
 import pandas as pd
+
+from general_functions import import_attr
 
 module_logger = logging.getLogger(__name__)
 
@@ -83,23 +84,6 @@ class Reporting:
             raise ValueError(var_msg)
         module_logger.info(f"Error logged: {list_vals}")
 
-    def __import_attr(self, path, script_name, attr_name):
-        if (path is None) | (path == '.'):
-            mod = importlib.import_module(script_name)
-        else:
-            var_script_path = os.path.join(path, f"{script_name}.py")
-            if not os.path.exists(var_script_path):
-                var_msg = f"The script does not exist: {script_name}.py"
-                module_logger.error(var_msg)
-                raise ValueError(var_msg)
-            spec = importlib.util.spec_from_file_location(
-                script_name, var_script_path)
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-        attr = getattr(mod, attr_name)
-
-        return attr
-
     def set_file_path(self, file_path):
         module_logger.info("Starting `set_file_path`")
         if type(file_path).__name__ != 'str':
@@ -121,7 +105,7 @@ class Reporting:
             f"Starting `apply_reporting` for script {script_name}")
 
         if (script_name is not None) & (object_name is not None):
-            dict_report = self.__import_attr(path, script_name, object_name)
+            dict_report = import_attr(path, script_name, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
                 var_msg = "The `dictionary` argument is not a dictionary"

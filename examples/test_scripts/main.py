@@ -39,15 +39,12 @@ if __name__ == "__main__":
     # Set the step number
     data.set_step_no(1)
 
-    # Read in the headers STYLE 1
-    # data.set_headers(["number", "date_1", "date_2", "string"])
-
-    # Read in the headers STYLE 2
-    data.read_in_headers(
+    # Read in the headers
+    data.set_comparison_headers(
         path=".",
         script_name="test_reading_in",
         filepath="../../data/input/test_scripts_1/headers.xlsx")
-    data.link_headers(path=".", script_name="test_reading_in")
+    data.link_headers()
     data.assert_linked_headers()
 
     data.set_step_no(2)
@@ -77,9 +74,9 @@ if __name__ == "__main__":
     # writing to DB
     data.set_step_no(6)
     data.form_summary_tables(path='.', script_name='reporting_1')
-    reporting.set_file_path('../../data/deliverables/pipeline_test_1/')
-    reporting.apply_reporting(
-        data.formed_tables, path='.', script_name='reporting_1')
+    # reporting.set_file_path('../../data/deliverables/pipeline_test_1/')
+    # reporting.apply_reporting(
+    #     data.formed_tables, path='.', script_name='reporting_1')
 
     # Temporary snapshot for testing
     pickle.dump(

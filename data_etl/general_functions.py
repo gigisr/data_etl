@@ -3,6 +3,7 @@
 import logging
 import os
 from datetime import datetime
+import importlib
 
 import pandas as pd
 
@@ -46,3 +47,21 @@ def func_to_sql(x, datetime_format='%Y-%m-%d'):
         return f"'{x.strftime(datetime_format)}'"
     else:
         return f"'{str(x)}'"
+
+
+def import_attr(path, script_name, attr_name):
+    if (path is None) | (path == '.'):
+        mod = importlib.import_module(script_name)
+    else:
+        var_script_path = os.path.join(path, f"{script_name}.py")
+        if not os.path.exists(var_script_path):
+            var_msg = f"The script does not exist: {script_name}.py"
+            module_logger.error(var_msg)
+            raise ValueError(var_msg)
+        spec = importlib.util.spec_from_file_location(
+            script_name, var_script_path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+    attr = getattr(mod, attr_name)
+
+    return attr
