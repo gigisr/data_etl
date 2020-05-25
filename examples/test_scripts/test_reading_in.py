@@ -19,7 +19,8 @@ def read_files(list_files):
     for file in list_files:
         xl = pd.ExcelFile(file)
         for sheet in xl.sheet_names:
-            df = xl.parse(sheet_name=sheet, dtype=str, keep_default_na=False)
+            df = xl.parse(
+                sheet_name=sheet, dtype=str, keep_default_na=False, header=None)
             key = '{} -:- {}'.format(
                 file.split('\\')[-1].lower().replace('.xlsx', ''), sheet)
             dict_files[key] = df.copy()
@@ -32,8 +33,21 @@ def read_headers(filepath):
             'The passed file path does not exist: {}'.format(filepath))
     dict_headers = dict()
     file = pd.ExcelFile(filepath)
-    for sheet in file.sheet_names:
-        dict_headers[sheet] = file.parse(sheet, header=None)
+    dict_headers['ideal_headers'] = file.parse(
+        'IdealHeaders', header=None).values.tolist()[0]
+    for sheet in [sheet for sheet in
+                  file.sheet_names if sheet != 'IdealHeaders']:
+        df_header = file.parse(sheet, header=None)
+        dict_headers[sheet] = {
+            'expected_headers': df_header[
+                df_header[0] == 'Header'].iloc[:, 1:].values.tolist()[0],
+            'new_headers': df_header[
+                df_header[0] == 'New name'].iloc[:, 1:].values.tolist()[0],
+            'remove': df_header[
+                df_header[0] == 'Remove'].iloc[:, 1:].values.tolist()[0],
+            'notes': df_header[
+                df_header[0] == 'Notes'].iloc[:, 1:].values.tolist()[0]
+        }
     return dict_headers
 
 

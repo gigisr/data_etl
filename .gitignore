@@ -9,7 +9,10 @@ data/deliverables/*
 *.db
 *.csv
 *.xlsx
-*.ipynb_checkpoints/*
+.ipynb_checkpoints/*
+*/.ipynb_checkpoints/*
 *.pyc
 docs/*
-data_curation.egg-info/*
+data_etl.egg-info/*
+logs/*
+!logs/README_logs.md

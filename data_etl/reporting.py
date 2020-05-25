@@ -2,9 +2,10 @@
 # have checked
 import logging
 import os
-import importlib
 
 import pandas as pd
+
+from data_etl.general_functions import import_attr
 
 module_logger = logging.getLogger(__name__)
 
@@ -98,16 +99,13 @@ class Reporting:
         module_logger.info("Completed `set_file_path`")
 
     def apply_reporting(
-            self, tables, script_name=None, path=None,
+            self, tables, path=None, script_name=None,
             object_name="dict_reporting", dictionary=None, **kwargs):
         module_logger.info(
             f"Starting `apply_reporting` for script {script_name}")
 
         if (script_name is not None) & (object_name is not None):
-            if not os.path.exists(os.path.join(path, f"{script_name}.py")):
-                raise ValueError("The script does not exist")
-            mod = importlib.import_module(script_name)
-            dict_report = getattr(mod, object_name)
+            dict_report = import_attr(path, script_name, object_name)
         elif dictionary is not None:
             if type(dictionary).__name__ != "dict":
                 var_msg = "The `dictionary` argument is not a dictionary"
