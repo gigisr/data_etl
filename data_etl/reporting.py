@@ -5,7 +5,7 @@ import os
 
 import pandas as pd
 
-from general_functions import import_attr
+from data_etl.general_functions import import_attr
 
 module_logger = logging.getLogger(__name__)
 

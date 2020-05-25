@@ -14,3 +14,9 @@ The main use I have for using this package at work is so I can feed back to the 
 + `01_example.ipnb` a look at some basic functionality: finding files, reading in the data, setting new headers, asserting nulls, then converting to the correct dtypes
 + `02_example.ipynb` a concentrated look at individual bits of functionality available and a look at the issue output produced when there are problems
 + `02_example.py` some externally defined information to use in the `02_example.ipynb` notebook for one of the sections
+
+# Run order
+
+1. Run `00_create_data.ipynb` first to create the data files for the examples
+
+You can then run either the notebooks or the `test_scripts/` files. **NB** If you want to run the scripts example then run the `03_example.ipynb` file first.

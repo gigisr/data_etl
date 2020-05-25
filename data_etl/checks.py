@@ -7,7 +7,7 @@ from inspect import getsourcelines
 import pandas as pd
 import numpy as np
 
-from general_functions import import_attr
+from data_etl.general_functions import import_attr
 
 module_logger = logging.getLogger(__name__)
 

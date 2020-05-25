@@ -9,7 +9,8 @@ data/deliverables/*
 *.db
 *.csv
 *.xlsx
-*.ipynb_checkpoints/*
+.ipynb_checkpoints/*
+*/.ipynb_checkpoints/*
 *.pyc
 docs/*
 data_etl.egg-info/*

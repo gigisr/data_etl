@@ -14,6 +14,8 @@ With models if certain assumptions are made then these can be tested.
 
 There is also benefit in performing checks in bulk, even if they produce issues, so it stops the stop start process.
 
+To use this package you should already have a good understanding of how the `pandas` package works.
+
 ## How to use this repoistory
 
 ### Setup environment
