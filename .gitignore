@@ -9,6 +9,7 @@ data/deliverables/*
 *.db
 *.csv
 *.xlsx
+*.log
 .ipynb_checkpoints/*
 */.ipynb_checkpoints/*
 *.pyc

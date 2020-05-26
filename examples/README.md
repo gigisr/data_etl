@@ -19,4 +19,4 @@ The main use I have for using this package at work is so I can feed back to the 
 
 1. Run `00_create_data.ipynb` first to create the data files for the examples
 
-You can then run either the notebooks or the `test_scripts/` files. **NB** If you want to run the scripts example then run the `03_example.ipynb` file first.
+You can then run either the notebooks or the `test_scripts/` files.

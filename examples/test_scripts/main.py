@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # Set up connections
     cnxs.add_cnx(
         cnx_key='df_issues', cnx_type='sqlite3', table_name='df_issues',
-        file_path='../data/00_db.db')
+        file_path='../data/00_db.db', sqlite_df_issues_create=True)
 
     # Data etl testing
 
