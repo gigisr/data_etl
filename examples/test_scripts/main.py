@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     var_checks_1_pass = True
 
-    func_initialise_logging('pipeline_test_1', '../../logs/', var_key_1,
+    func_initialise_logging('pipeline_test_1', '../logs/', var_key_1,
                             var_key_2, var_key_3, var_start_time)
 
     # Initialise objects required
@@ -27,12 +27,12 @@ if __name__ == "__main__":
     # Set up connections
     cnxs.add_cnx(
         cnx_key='df_issues', cnx_type='sqlite3', table_name='df_issues',
-        file_path='../../data/processed/pipeline.db')
+        file_path='../data/00_db.db')
 
     # Data etl testing
 
     # Read the files in
-    data.find_files(files_path="../../data/input/test_scripts_1",
+    data.find_files(files_path="../data",
                     script_name="test_reading_in", path='.')
     data.reading_in(path=".", script_name="test_reading_in")
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     data.set_comparison_headers(
         path=".",
         script_name="test_reading_in",
-        filepath="../../data/input/test_scripts_1/headers.xlsx")
+        filepath="../data/headers.xlsx")
     data.link_headers()
     data.assert_linked_headers()
 
@@ -70,18 +70,15 @@ if __name__ == "__main__":
         check.get_issue_count(5, 5), cnxs, 'df_issues', check.df_issues,
         check.get_step_no(), var_checks_1_pass, var_start_time)
 
-    # Now the data is cleansed do the reporting, this would ideally be post
-    # writing to DB
+    # Now the data is cleansed do the reporting, this could be
+    # post writing to DB
     data.set_step_no(6)
     data.form_summary_tables(path='.', script_name='reporting_1')
-    # reporting.set_file_path('../../data/deliverables/pipeline_test_1/')
-    # reporting.apply_reporting(
-    #     data.formed_tables, path='.', script_name='reporting_1')
 
     # Temporary snapshot for testing
     pickle.dump(
         {'data': data, 'checks': check, 'report': reporting},
-        open("../../data/pickles/dict_dc.pkl", "wb"))
+        open("../data/dict_dc.pkl", "wb"))
 
     # Log issues found
     cnxs.write_to_db('df_issues', data.df_issues)
