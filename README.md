@@ -6,7 +6,7 @@ A package for dealing with data curation, transformation and checks.
 
 This can be reading in and converting to the correct dtypes, making suitable alterations to bring data into a uniform format. Or just taking an existing data set and performing some checks on it.
 
-The aim is to help with regular data sources provided by others, or by systems. This means it could be in a flat file format, it could mean that you are given data that isn't logically correct, it could mean missing data, there could be any number of problems. But hopefully having an issue report with a good amount of information on how something is wrong and where will give us capacity to provide this back to the data creatrors. Thus checks can be done in bulk, quickly, and issue reports put the responsibility on the data creator to make the corrections.
+The aim is to help with regular data sources provided by others, or by systems. This means it could be in a flat file format, it could mean that you are given data that isn't logically correct, it could mean missing data, there could be any number of problems. But hopefully having an issue report with a good amount of information on how something is wrong and where will give us capacity to provide this back to the data creators. Thus checks can be done in bulk, quickly, and issue reports put the responsibility on the data creator to make the corrections.
 
 The checks are not just considering single columns or single values they can consider the whole data set or even in conjunction with extra data sets, because that's how data often behaves. 
 
