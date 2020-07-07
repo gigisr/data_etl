@@ -41,3 +41,27 @@ There are multiple examples present in the repository in the `examples` files.
 Use the `00_create_data.py` file to create the data to run the examples on and the sqlitedb file that will contain any errors or written out data.
 
 The other files, both `*.ipynb` and `*.py`, are the examples files.   
+
+A brief code example of how to use:
+
+```python
+from data_etl import Checks
+import pandas as pd
+
+data = pd.DataFrame([1, -3, 2], columns=['number'])
+
+# Initialise the Checks class
+ch_simple = Checks('grouping_label', 'key_1', 'key_2', 'key_3')
+
+# Define a simple check
+dict_checks = {
+    'Number should be greater than 0': {
+        'calc_condition': lambda df, col, **kwargs: df['number'] <= 0
+    }
+}
+# Apply the checks to the tables
+ch_simple.apply_checks(data, dictionary=dict_checks)
+
+# If any issues are found then they are stored internal to the class as a Pandas DataFrame
+ch_simple.df_issues
+```
