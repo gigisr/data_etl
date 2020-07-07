@@ -3,6 +3,8 @@
 import logging
 from datetime import datetime
 import pickle
+# This is only used to create a table, usually this would already be done
+import sqlite3
 
 from data_etl import DataCuration, Checks, Connections, Reporting, \
     func_check_for_issues, func_initialise_logging
@@ -14,6 +16,7 @@ if __name__ == "__main__":
     var_start_time = datetime.now()
 
     var_checks_1_pass = True
+    var_write_out = False
 
     func_initialise_logging('pipeline_test_1', '../logs/', var_key_1,
                             var_key_2, var_key_3, var_start_time)
@@ -28,6 +31,20 @@ if __name__ == "__main__":
     cnxs.add_cnx(
         cnx_key='df_issues', cnx_type='sqlite3', table_name='df_issues',
         file_path='../data/00_db.db', sqlite_df_issues_create=True)
+
+    # # This is only needed to create the structure,
+    cnx = sqlite3.connect('../data/00_db.db')
+    var_create_table = """CREATE TABLE IF NOT EXISTS data (
+            a_number INTEGER, date_1 TEXT, date_2 TEXT, string TEXT, 
+            testing REAL, a REAL, b REAL, lat REAL, lng REAL, number_2 INTEGER, 
+            key_1 TEXT, key_2 TEXT, level_0 TEXT
+        );"""
+    cnx.execute(var_create_table)
+    cnx.commit()
+    cnx.close()
+
+    cnxs.add_cnx(cnx_key='data_out', cnx_type='sqlite3', table_name='data',
+                 file_path='../data/00_db.db')
 
     # Data etl testing
 
@@ -45,7 +62,7 @@ if __name__ == "__main__":
         script_name="test_reading_in",
         filepath="../data/headers.xlsx")
     data.link_headers()
-    data.assert_linked_headers()
+    data.assert_linked_headers(remove_header_rows=True, reset_index=True)
 
     data.set_step_no(2)
     data.assert_nulls([""])
@@ -77,12 +94,16 @@ if __name__ == "__main__":
 
     # Temporary snapshot for testing
     pickle.dump(
-        {'data': data, 'checks': check, 'report': reporting},
+        {'data': data, 'checks': check, 'report': reporting, 'cnx': cnxs},
         open("../data/dict_dc.pkl", "wb"))
 
     # Log issues found
     cnxs.write_to_db('df_issues', data.df_issues)
     cnxs.write_to_db('df_issues', check.df_issues)
+
+    # Write the data out
+    if var_write_out:
+        cnxs.write_to_db('data_out', data.tables)
 
     logging.info("Script time taken: {}".format(
         str(datetime.now() - var_start_time)))

@@ -484,17 +484,18 @@ class DataCuration:
 
     @staticmethod
     def __assert_linked_headers(
-        list_ideal_headers, dict_header, df, reset_index):
+        list_ideal_headers, dict_header, df, remove_header_rows, reset_index):
         list_expected_headers = dict_header['expected_headers']
         list_new_names = dict_header['new_headers']
         list_remove = [
             item for item in dict_header['remove'] if not pd.isnull(item)]
 
         # Remove the expected headers rows
-        df.drop(
-            [i for i in range(len(list_expected_headers))],
-            axis=0,
-            inplace=True)
+        if remove_header_rows:
+            df.drop(
+                [i for i in range(len(list_expected_headers))],
+                axis=0,
+                inplace=True)
         if reset_index:
             df.reset_index(drop=True, inplace=True)
 
@@ -507,8 +508,8 @@ class DataCuration:
 
         # Fill in missing columns and reorder columns
         list_df_cols = df.columns.tolist()
-        list_cols = [col for col in list_ideal_headers if
-                    col not in list_df_cols]
+        list_cols = [
+            col for col in list_ideal_headers if col not in list_df_cols]
         for col in list_cols:
             df[col] = np.nan
 
@@ -516,7 +517,8 @@ class DataCuration:
 
         return df
 
-    def assert_linked_headers(self, reset_index=True):
+    def assert_linked_headers(
+            self, remove_header_rows=False, reset_index=False):
         module_logger.info("Starting `assert_linked_headers`")
 
         if type(self.tables).__name__ == 'dict':
@@ -526,6 +528,7 @@ class DataCuration:
                     self.headers['ideal_headers'],
                     self.headers[self.__link_headers[key]],
                     dict_dfs[key],
+                    remove_header_rows,
                     reset_index
                 )
             self.set_table(dict(dict_dfs))
@@ -535,6 +538,7 @@ class DataCuration:
                 self.headers['ideal_headers'],
                 self.headers[self.__link_headers[key]],
                 self.tables,
+                remove_header_rows,
                 reset_index
             )
             self.set_table(df.copy())
