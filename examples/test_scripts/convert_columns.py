@@ -30,7 +30,7 @@ def func_string_to_float(df, col):
 
 
 dict_convert['int'] = {
-    'columns': ['a_number'],
+    'columns': lambda df, **kwargs: ['a_number'],
     'dtypes': ['int', 'float'],
     'functions': {
         1: lambda df, col, **kwargs: df[col].astype(int),
