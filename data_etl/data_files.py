@@ -818,7 +818,10 @@ class DataCuration:
     def __convert_col(self, df, dict_convert, dict_key, **kwargs):
         module_logger.info("Starting `__convert_col`")
         for convert_key in dict_convert.keys():
-            list_cols = dict_convert[convert_key]["columns"]
+            cols = dict_convert[convert_key]["columns"]
+            if type(cols).__name__ == 'function':
+                cols = cols(df, **kwargs)
+            list_cols = list(cols)
             list_stops = dict_convert[convert_key]["dtypes"]
             dict_functions = dict_convert[convert_key]["functions"]
             for col in list_cols:
