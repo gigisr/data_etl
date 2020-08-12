@@ -11,6 +11,18 @@ from data_etl.general_functions import import_attr
 
 module_logger = logging.getLogger(__name__)
 
+dict_checks_defaults = {
+    'columns': [np.nan],
+    'check_condition':
+        lambda df, col, condition, **kwargs: condition.sum() > 0,
+    'count_condition': lambda df, col, condition, **kwargs: condition.sum(),
+    'index_position': lambda df, col, condition, **kwargs: condition,
+    'relevant_columns': lambda df, col, condition, **kwargs: col,
+    'long_description': lambda df, col, condition, **kwargs: "",
+    'idx_flag': True,
+    'category': np.nan
+}
+
 
 class Checks:
     __step_no = 0
@@ -20,17 +32,7 @@ class Checks:
     __grouping = None
     df_issues = None
     __key_separator = " -:- "
-    __checks_defaults = {
-        'columns': [np.nan],
-        'check_condition':
-            lambda df, col, condition, **kwargs: condition.sum() > 0,
-        'count_condition': lambda df, col, condition, **kwargs: condition.sum(),
-        'index_position': lambda df, col, condition, **kwargs: condition,
-        'relevant_columns': lambda df, col, condition, **kwargs: col,
-        'long_description': lambda df, col, condition, **kwargs: "",
-        'idx_flag': True,
-        'category': np.nan
-    }
+    __checks_defaults = None
 
     def __init__(self, grouping, key_1, key_2=None, key_3=None):
         module_logger.info("Initialising `Checks` object")
@@ -39,6 +41,7 @@ class Checks:
         self.__key_2 = str(key_2)
         self.__key_3 = str(key_3)
         self.__grouping = grouping
+        self.__checks_defaults = dict(dict_checks_defaults)
         # Initialise the `df_issues` table
         df_issues = pd.DataFrame(
             columns=[

@@ -18,11 +18,11 @@ class DataCuration:
     __key_2 = None
     __key_3 = None
     __grouping = None
-    tables = dict()
-    formed_tables = dict()
-    list_files = list()
+    tables = None
+    formed_tables = None
+    list_files = None
     __key_separator = " -:- "
-    __link_headers = dict()
+    __link_headers = None
 
     def __init__(self, grouping, key_1, key_2=None, key_3=None):
         """
@@ -49,6 +49,10 @@ class DataCuration:
         )
         df_issues["step_number"] = df_issues["step_number"].astype(int)
         self.df_issues = df_issues
+        self.tables = dict()
+        self.formed_tables = dict()
+        self.list_files = list()
+        self.__link_headers = dict()
         module_logger.info("Initialising `DataCuration` object complete")
 
     def error_handling(self, file, subfile, issue_short_desc, issue_long_desc,
@@ -488,7 +492,9 @@ class DataCuration:
         list_expected_headers = dict_header['expected_headers']
         list_new_names = dict_header['new_headers']
         list_remove = [
-            item for item in dict_header['remove'] if not pd.isnull(item)]
+            dict_header['new_headers'][i] for i in range(len(dict_header['remove'])) 
+            if dict_header['remove'][i] == 'remove'
+        ]
 
         # Remove the expected headers rows
         if remove_header_rows:

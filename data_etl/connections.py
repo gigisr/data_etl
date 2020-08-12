@@ -20,14 +20,15 @@ module_logger = logging.getLogger(__name__)
 class Connections:
     __step_no = 0
     __df_issues = None
-    __dict_cnx = {
-        'blank': {'cnx_type': 'blank'}
-    }
+    __dict_cnx = None
 
     def __init__(self, step_no=None):
         module_logger.info("Initialising `Connections` object")
         if step_no is not None:
             self.set_step_no(step_no)
+        self.__dict_cnx = {
+            'blank': {'cnx_type': 'blank'}
+        }
         module_logger.info("Initialising `Connections` object complete")
 
     def set_step_no(self, step_no):
@@ -51,10 +52,11 @@ class Connections:
             module_logger.error(var_msg)
             raise ValueError(var_msg)
         if cnx_type not in ['sqlite3', 'db']:
-            var_msg = 'The `cnx_type` argument only takes values `sqlite3`'
+            var_msg = (
+                'The `cnx_type` argument only takes values `sqlite3`, `db`')
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
-        if table_name is None:
+        if (table_name is None) & (cnx_type in ['sqlite3', 'db']):
             var_msg = 'The argument `table_name` is required'
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
@@ -62,14 +64,23 @@ class Connections:
             var_msg = 'The argument `file_path` is required'
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
-        if (not os.path.exists(file_path)) & (cnx_type in ['db']):
-            var_msg = f'The `file_path` {file_path} is not valid'
+        if (
+                (not os.path.exists(file_path)) &
+                (cnx_string is None) &
+                (cnx_type in ['db'])
+        ):
+            var_msg = (
+                f'The `file_path` to the config file {file_path} is not valid, '
+                f'the `file_path` is expected since the `cnx_string` is None'
+            )
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
-        if ((not os.path.exists(os.path.dirname(file_path))) &
-            (cnx_type in ['sqlite3'])):
+        if (
+                (not os.path.exists(os.path.dirname(file_path))) &
+                (cnx_type in ['sqlite3'])
+        ):
             var_msg = (
-                f'The fodler path {os.path.dirname(file_path)} is not valid')
+                f'The folder path {os.path.dirname(file_path)} is not valid')
             module_logger.error(var_msg)
             raise AttributeError(var_msg)
         if (not os.path.exists(file_path)) & (cnx_type in ['sqlite3']):
@@ -263,7 +274,7 @@ class Connections:
             ).apply(
                 lambda r: f"({', '.join(r)})", axis=1)
             var_iloc_min = 0
-            for i in range(1, int(s_sql_values.shape[0] / batch_size) + 2):
+            for i in range(1, int(s_sql_values.shape[0] / batch_size) + 1):
                 s_filtered = s_sql_values.iloc[
                              var_iloc_min:(i * batch_size)]
                 var_sql = var_sql_template.format(
@@ -320,7 +331,7 @@ class Connections:
                 ).apply(
                     lambda r: f"({', '.join(r)})", axis=1)
                 var_iloc_min = 0
-                for i in range(1, int(s_sql_values.shape[0] / batch_size) + 2):
+                for i in range(1, int(s_sql_values.shape[0] / batch_size) + 1):
                     s_filtered = s_sql_values.iloc[
                         var_iloc_min:(i * batch_size)]
                     var_sql = var_sql_template.format(
