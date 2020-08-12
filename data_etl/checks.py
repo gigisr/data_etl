@@ -32,7 +32,7 @@ class Checks:
     __grouping = None
     df_issues = None
     __key_separator = " -:- "
-    __checks_defaults = dict(dict_checks_defaults)
+    __checks_defaults = None
 
     def __init__(self, grouping, key_1, key_2=None, key_3=None):
         module_logger.info("Initialising `Checks` object")
@@ -41,6 +41,7 @@ class Checks:
         self.__key_2 = str(key_2)
         self.__key_3 = str(key_3)
         self.__grouping = grouping
+        self.__checks_defaults = dict(dict_checks_defaults)
         # Initialise the `df_issues` table
         df_issues = pd.DataFrame(
             columns=[
