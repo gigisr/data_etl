@@ -11,7 +11,7 @@ module_logger = logging.getLogger(__name__)
 
 
 def func_initialise_logging(
-        script_name, log_folder_path, key_1, key_2, key_3, start_time):
+    script_name, log_folder_path, key_1, key_2, key_3, start_time):
     var_log_name = os.path.abspath(
         os.path.join(
             log_folder_path,

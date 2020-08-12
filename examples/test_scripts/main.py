@@ -16,7 +16,7 @@ if __name__ == "__main__":
     var_start_time = datetime.now()
 
     var_checks_1_pass = True
-    var_write_out = False
+    var_write_out = True
 
     func_initialise_logging('pipeline_test_1', '../logs/', var_key_1,
                             var_key_2, var_key_3, var_start_time)

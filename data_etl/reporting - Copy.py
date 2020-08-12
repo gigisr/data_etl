@@ -34,11 +34,7 @@ class Reporting:
     __key_2 = None
     __key_3 = None
     df_issues = None
-    __defaults = {
-        'type': 'general'
-        # TODO add file path into here instead of its own stand
-        #  alone private variable
-    }
+    __defaults = None
 
     def __init__(self, grouping, key_1, key_2=None, key_3=None):
         module_logger.info("Initialising `Reporting` object")
@@ -57,6 +53,11 @@ class Reporting:
         )
         df_issues["step_number"] = df_issues["step_number"].astype(int)
         self.df_issues = df_issues
+        self.__defaults = {
+            'type': 'general'
+            # TODO add file path into here instead of its own stand
+            #  alone private variable
+        }
         module_logger.info("Initialising `Reporting` object complete")
 
     def error_handling(self, file, subfile, issue_short_desc, issue_long_desc,
@@ -100,8 +101,7 @@ class Reporting:
 
     def apply_reporting(
             self, tables, path=None, script_name=None,
-            object_name="dict_reporting", dictionary=None, list_filters=None,
-            **kwargs):
+            object_name="dict_reporting", dictionary=None, **kwargs):
         module_logger.info(
             f"Starting `apply_reporting` for script {script_name}")
 
@@ -115,42 +115,17 @@ class Reporting:
             dict_report = dictionary
         else:
             var_msg = ("Either `dictionary` or both of `script_name` and "
-                       "`object_name` need to be none null")
+                       "`path` need to be none null")
             module_logger.error(var_msg)
             raise ValueError(var_msg)
 
-        if type(list_filters).__name__ not in ['list', 'NoneType']:
-            var_msg = f'The list filters is of type {type(list_filters).__name__} not list or NoneType'
-            module_logger.error(var_msg)
-            raise Exception(var_msg)
-        # TODO check list filters is a list
-        # Filter the reports
-        if list_filters is None:
-            dict_report_use = dict_report
-        else:
-            dict_report_use = dict(
-                [
-                    item for item in dict_report.items() if
-                    len(
-                        [label for label in item[1]['labels'] if
-                         label in list_filters]
-                    ) > 0
-                ]
-            )
-        if len(dict_report_use) == 0:
-            var_msg = ('The provided reporting dictionary has been filtered '
-                       'and no reports have been found')
-            module_logger.warning(var_msg)
-
-        for report_key in dict_report_use.keys():
+        for report_key in dict_report.keys():
             module_logger.info(f"Starting report `{report_key}`")
-            dict_use = dict_report_use[report_key]
-            var_report_type = (
-                self.__defaults['type'] if
-                'type' not in dict_use else dict_use['type'])
-            var_file_path = (
-                self.__file_path if 'file_path' not in dict_use
-                else dict_use['file_path'])
+            dict_use = dict_report[report_key]
+            var_report_type = (self.__defaults['type'] if
+                               'type' not in dict_use else dict_use['type'])
+            var_file_path = (self.__file_path if 'file_path' not in dict_use
+                             else dict_use['file_path'])
             if 'file_name' not in dict_use:
                 var_msg = (
                     'The key `file_name` is not present when it should be')
@@ -161,18 +136,8 @@ class Reporting:
                     'The key `function` is not present when it should be')
                 module_logger.error(var_msg)
                 raise AttributeError(var_msg)
-            if (var_report_type == 'data output') & (
-                    'explanation_details' not in dict_use):
-                var_msg = (
-                    'The key `explanation_details` is not present when '
-                    'it should be')
-                module_logger.error(var_msg)
-                raise AttributeError(var_msg)
-            # TODO check for certain field in explanation details
             # TODO join the full file path together here and pass to the report
             #  functions
-            list_keys = [
-                self.__grouping, self.__key_1, self.__key_2, self.__key_3]
             if var_report_type == 'general':
                 var_file_name = dict_use['file_name'](
                     tables, self.__file_path, self.__grouping, self.__key_1,
@@ -181,29 +146,6 @@ class Reporting:
                     dict_use['function'], tables, var_file_path, var_file_name,
                     self.__grouping, self.__key_1, self.__key_2, self.__key_3,
                     **kwargs)
-            elif var_report_type == 'data output':
-                var_file_name = dict_use['file_name'](
-                    tables, list_keys, var_file_path, **kwargs)
-                dict_use['function'](
-                    tables, list_keys, var_file_name, self.__file_path,
-                    **kwargs)
-                dict_explanation_details = dict_use['explanation_details'](
-                    tables, list_keys, var_file_name, self.__file_path,
-                    **kwargs)
-                # TODO possible default text file extension as either .txt or .md
-                with open(
-                    os.path.join(
-                        self.__file_path,
-                        '.'.join(var_file_name.split('.')[:-1]) + '.md'),
-                    'w'
-                ) as f:
-                    f.write(
-                        '# This is a README to go with the data output\n---\n')
-                    # TODO have a sense of consistent order to this, so force the purpose to be first for instance and to be required
-                    for header in dict_explanation_details.keys():
-                        f.write(
-                            f'## {header}\n\n'
-                            f'{dict_explanation_details[header]}\n\n')
             else:
                 var_msg = (f'The passed type is not currently handled: '
                            f'`{var_report_type}`')
