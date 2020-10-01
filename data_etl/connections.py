@@ -274,7 +274,7 @@ class Connections:
             ).apply(
                 lambda r: f"({', '.join(r)})", axis=1)
             var_iloc_min = 0
-            for i in range(1, int(s_sql_values.shape[0] / batch_size) + 1):
+            for i in range(1, int(s_sql_values.shape[0] / batch_size) + 2):
                 s_filtered = s_sql_values.iloc[
                              var_iloc_min:(i * batch_size)]
                 var_sql = var_sql_template.format(
@@ -320,9 +320,9 @@ class Connections:
             cnx = pyodbc.connect(dict_cnx['cnx_string'])
             cursor = cnx.cursor()
             try:
-                var_sql_template = "INSERT INTO {} ({}) VALUES {}".format(
+                var_sql_template = "INSERT INTO {} ([{}]) VALUES {}".format(
                     dict_cnx['table_name'],
-                    ", ".join(table.columns.tolist()),
+                    "], [".join(table.columns.tolist()),
                     '{}'
                 )
                 s_sql_values = table.apply(
@@ -331,11 +331,13 @@ class Connections:
                 ).apply(
                     lambda r: f"({', '.join(r)})", axis=1)
                 var_iloc_min = 0
-                for i in range(1, int(s_sql_values.shape[0] / batch_size) + 1):
+                for i in range(1, int(s_sql_values.shape[0] / batch_size) + 2):
                     s_filtered = s_sql_values.iloc[
-                        var_iloc_min:(i * batch_size)]
+                                 var_iloc_min:(i * batch_size)]
                     var_sql = var_sql_template.format(
                         ", ".join(s_filtered.values.tolist()))
+                    if flag_sql_logging:
+                        module_logger.info(var_sql)
                     cursor.execute(var_sql)
                     cnx.commit()
                     var_iloc_min = i * batch_size
